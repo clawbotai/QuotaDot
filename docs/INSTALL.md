@@ -1,32 +1,36 @@
-# 安装 QuotaDot
+# Install QuotaDot
 
-## 系统要求
+## System Requirements
 
-- macOS 14 Sonoma 或更高版本。
-- 至少一个已登录的服务：Codex 或 Claude Code。
+- macOS 14 Sonoma or later.
+- At least one signed-in provider: Codex or Claude Code.
 
-## 推荐安装方式
+## Recommended Installation
 
-1. 在 GitHub Releases 下载最新的 `QuotaDot-x.y.z.dmg`。
-2. 双击打开 DMG。
-3. 把 QuotaDot 拖到 Applications 文件夹。
-4. 从“应用程序”启动 QuotaDot。
+Only install a release DMG that is signed with Developer ID and notarized by Apple.
 
-QuotaDot 是菜单栏应用，不会出现在 Dock 中。启动后，菜单栏会显示双环图标与当前最低剩余额度，桌面上会出现可自动收起的悬浮窗口。
+1. Download the latest `QuotaDot-x.y.z.dmg` from [GitHub Releases](https://github.com/MeowkingCP/QuotaDot/releases).
+2. Double-click the DMG to open it.
+3. Drag QuotaDot into the Applications folder.
+4. Launch QuotaDot from Applications.
 
-## 首次使用
+QuotaDot is a menu bar application and does not appear in the Dock. After launch, the menu bar shows a dual-ring icon and the lowest remaining quota percentage. A floating window appears on the desktop and collapses automatically when it is not being inspected.
 
-- 天气背景：macOS 询问定位权限时选择允许；拒绝后额度功能仍可使用。
-- 自动启动：打开 QuotaDot 菜单栏菜单 → 设置，开启“登录后自动启动”。如果 macOS 要求确认，按提示前往“系统设置 → 通用 → 登录项”。
-- 中英文：展开悬浮窗后点击状态行里的 `EN` / `ZH`，或在设置中选择显示语言；无需重启。
-- 数据为空：先确认 Codex 或 Claude Code 已在当前 macOS 用户下登录，然后点击“立即刷新”。
+If no signed and notarized DMG is listed on the Releases page, a public end-user build is not available yet. Developers can build from source by following the instructions in the repository README.
 
-## 卸载
+## First Launch
 
-1. 在 QuotaDot 设置中关闭“登录后自动启动”。
-2. 从菜单栏选择“退出 QuotaDot”。
-3. 将 Applications 中的 QuotaDot 移到废纸篓。
+- **Weather background:** Allow location access when macOS asks for permission. Quota features continue to work if permission is denied.
+- **Launch at login:** Open the QuotaDot menu bar menu, choose Settings, and enable Launch at Login. If macOS requests approval, follow the prompt to System Settings → General → Login Items.
+- **Language:** Click `EN` or `ZH` in the expanded status row, or select a display language in Settings. No restart is required.
+- **No quota data:** Confirm that Codex or Claude Code is signed in for the current macOS user, then choose Refresh Now.
 
-## 关于未签名测试包
+## Uninstall
 
-文件名含 `UNSIGNED` 的 DMG 仅用于开发者本机验证，未经 Apple 公证。普通用户应只安装 GitHub Releases 中经过签名与公证的正式包。
+1. Disable Launch at Login in QuotaDot Settings.
+2. Choose Quit QuotaDot from the menu bar menu.
+3. Move QuotaDot from Applications to the Trash.
+
+## Unsigned Development Builds
+
+DMG files containing `UNSIGNED` in their name are intended only for local developer validation and have not been notarized by Apple. End users should install only signed and notarized builds published on the GitHub Releases page.

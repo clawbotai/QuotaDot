@@ -12,46 +12,46 @@
   <img alt="MIT License" src="https://img.shields.io/badge/License-MIT-2563EB">
 </p>
 
-QuotaDot 是一款原生 macOS 菜单栏与桌面悬浮额度工具。它从本机已登录的 Codex、Claude Code 读取实时额度，在一个克制的 Liquid Glass 界面里展示剩余比例、重置时间和当前消耗状态。
+QuotaDot is a native macOS menu bar and floating quota companion for Codex and Claude. It reads locally authenticated sessions and presents remaining quota, reset times, and current activity in a restrained Liquid Glass interface.
 
-## 功能
+## Features
 
-- 同时或单独显示 Codex 与 Claude；未登录的服务不会占位。
-- 自动识别当前可用的 5 小时与本周额度窗口；服务端临时取消某个窗口时自动隐藏，恢复后自动出现。
-- 显示准确的重置时间、Codex 可用重置次数与各次到期时间。
-- 检测本机 Codex / Claude 活动，只高亮正在使用的服务。
-- 鼠标离开后收起为双服务悬浮小窗，移入时展开完整面板。
-- 根据额度健康度与实时天气呈现动态背景。
-- 每个额度环按自身剩余比例独立变色：大于 50% 为蓝色，10%～50% 为琥珀色，不高于 10% 为珊瑚红。
-- 菜单栏常驻显示双环图形与最低剩余额度。
-- 悬浮窗与设置页支持简体中文 / English 即时切换并记住选择。
-- 支持 macOS 登录后自动启动。
+- Shows Codex and Claude together or independently; providers that are not signed in do not reserve space.
+- Detects the quota windows currently returned by each service. A temporarily unavailable five-hour window is hidden automatically and reappears when the service restores it.
+- Displays reset times, available Codex quota resets, and the expiration time of each reset opportunity when the service provides that data.
+- Detects local Codex and Claude activity and highlights only the provider currently in use.
+- Collapses into separate provider badges when the pointer leaves and expands into a unified detail panel on hover.
+- Adapts the background to quota health and current local weather.
+- Colors each quota ring independently: blue above 50%, amber from 10% through 50%, and coral at 10% or below.
+- Keeps a compact dual-ring indicator and the lowest remaining percentage in the menu bar.
+- Supports instant Simplified Chinese and English switching in the floating panel and Settings, with the preference saved locally.
+- Supports launching automatically after macOS login.
 
-## 普通用户安装
+## Installation
 
-1. 从 GitHub Releases 下载最新的 `QuotaDot-x.y.z.dmg`。
-2. 打开 DMG，把 QuotaDot 拖进 Applications。
-3. 启动 QuotaDot；如需天气背景，请允许定位。
-4. 确保 Codex 和/或 Claude Code 已经在本机登录。
+Public builds must be signed with a Developer ID Application certificate and notarized by Apple. When a signed release is available:
 
-正式 Release 使用 Developer ID 签名并经过 Apple 公证。不要把文件名含 `UNSIGNED` 的本地测试包分享给普通用户。
+1. Download the latest `QuotaDot-x.y.z.dmg` from [GitHub Releases](https://github.com/MeowkingCP/QuotaDot/releases).
+2. Open the DMG and drag QuotaDot into Applications.
+3. Launch QuotaDot and allow location access if you want the live weather background.
+4. Make sure Codex and/or Claude Code is already signed in for the current macOS user.
 
-更完整的说明见 [安装指南](docs/INSTALL.md)。
+No unsigned build is published as an end-user release. Files containing `UNSIGNED` in their name are local development artifacts and must not be redistributed. See the [installation guide](docs/INSTALL.md) for details.
 
-## 隐私
+## Privacy
 
-QuotaDot 不运行自己的账号或额度服务器：
+QuotaDot does not operate an account or quota relay server:
 
-- Codex 凭据从本机 `CODEX_HOME/auth.json`（默认 `~/.codex/auth.json`）只读加载。
-- Claude 凭据从 Claude Code 的本机安全存储读取；仅在官方刷新流程需要时更新原凭据。
-- 额度请求直接发往对应服务的官方接口。
-- 位置坐标仅用于向天气服务请求当地天气；不与额度凭据组合，也不写入项目日志。
+- Codex credentials are loaded read-only from the local `CODEX_HOME/auth.json` file, which defaults to `~/.codex/auth.json`.
+- Claude credentials are read from Claude Code's local secure storage and are written back only when the official token refresh flow requires it.
+- Quota requests are sent directly to the corresponding provider endpoints.
+- Location coordinates are used only to request local weather. They are not combined with quota credentials or written to project logs.
 
-详见 [PRIVACY.md](PRIVACY.md)。使用本项目即表示你理解它依赖第三方服务当前提供的本机登录格式和额度接口，这些接口将来可能变化。
+See [PRIVACY.md](PRIVACY.md). By using this project, you acknowledge that it depends on local authentication formats and quota endpoints currently exposed by third-party services, which may change in the future.
 
-## 本地开发
+## Local Development
 
-要求：macOS 14 或更高版本、Xcode Command Line Tools、Swift 6。
+Requirements: macOS 14 or later, Xcode Command Line Tools, and Swift 6.
 
 ```bash
 git clone https://github.com/MeowkingCP/QuotaDot.git
@@ -60,39 +60,33 @@ swift test
 ./script/build_and_run.sh --verify
 ```
 
-重新生成应用图标：
+Regenerate the application icon:
 
 ```bash
 ./script/generate_app_icon.swift
 ```
 
-维护者的签名、公证与 DMG 流程见 [发布指南](docs/RELEASING.md)。
+Maintainers can find the signing, notarization, and DMG workflow in the [release guide](docs/RELEASING.md).
 
-## 项目结构
+## Project Structure
 
 ```text
 Sources/QuotaDot/
-  App/        App 生命周期与菜单栏入口
-  Models/     额度、天气数据模型
-  Services/   Codex、Claude、定位、天气与登录项
-  Stores/     刷新、合并与活动状态
-  Views/      Liquid Glass 悬浮界面与设置
-script/       构建、图标生成、签名与发布脚本
-Tests/        数据解析与策略测试
+  App/        Application lifecycle and menu bar entry point
+  Models/     Quota and weather data models
+  Services/   Codex, Claude, location, weather, and login-item clients
+  Stores/     Refresh, merge, and activity state
+  Views/      Liquid Glass floating interface and Settings
+script/       Build, icon generation, signing, and release scripts
+Tests/        Data parsing and policy tests
 ```
 
-## 参与贡献
+## Contributing
 
-Issue 和 Pull Request 都欢迎。提交前请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 与 [SECURITY.md](SECURITY.md)。
+Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md) before submitting a change.
 
-QuotaDot 与 OpenAI、Anthropic 没有隶属或背书关系；相关名称与商标归各自所有者。
+QuotaDot is not affiliated with or endorsed by OpenAI or Anthropic. All related names and trademarks belong to their respective owners.
 
 ## License
 
 [MIT](LICENSE) © 2026 QuotaDot Contributors
-
----
-
-### English
-
-QuotaDot is a native macOS menu bar and floating quota companion for Codex and Claude. It reads locally authenticated sessions, adapts to the quota windows currently returned by each service, and keeps credentials on your Mac. See [docs/INSTALL.md](docs/INSTALL.md) to get started.
