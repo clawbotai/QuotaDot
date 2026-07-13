@@ -1,0 +1,73 @@
+"menu.loading" = "正在读取额度…";
+"menu.show" = "显示悬浮额度";
+"menu.refresh" = "立即刷新";
+"menu.settings" = "设置…";
+"menu.quit" = "退出 QuotaDot";
+"menu.weekly.short" = "周";
+
+"header.switchLanguage" = "切换语言";
+"status.cached" = "部分数据暂存";
+"status.healthy" = "状态健康";
+"status.warning" = "需要留意";
+"status.critical" = "额度危急";
+"status.connecting" = "正在连接";
+"footer.updated" = "%@ 更新";
+"footer.waiting" = "等待更新";
+"empty.title" = "暂时读不到额度";
+"empty.connecting" = "正在连接额度服务";
+
+"provider.connected" = "已连接";
+"provider.active" = "正在使用";
+"provider.idle" = "当前稳定";
+"quota.session" = "5 小时额度";
+"quota.weekly" = "本周额度";
+"quota.used" = "已使用 %d%%";
+"quota.syncing" = "等待同步额度";
+"quota.resets" = "%@ 重置";
+"quota.resetWaiting" = "等待重置时间";
+
+"credits.available" = "可用 %d 次额度重置";
+"credits.viewExpiry" = "查看到期时间";
+"credits.title" = "额度重置机会";
+"credits.current" = "当前可用 %d 次";
+"credits.noExpiry" = "服务暂未返回具体到期时间";
+"credits.expires" = "%@ 到期";
+
+"settings.general" = "常规";
+"settings.language" = "显示语言";
+"settings.chinese" = "简体中文";
+"settings.english" = "English";
+"settings.launchAtLogin" = "登录后自动启动";
+"settings.launchAtLogin.detail" = "在你登录 Mac 后自动运行 QuotaDot，并保持菜单栏与悬浮额度可用。";
+"settings.systemStatus" = "系统状态";
+"settings.approvalRequired" = "macOS 需要你在系统设置中允许 QuotaDot。";
+"settings.openLoginItems" = "打开登录项设置";
+"settings.data" = "数据";
+"settings.quotaSource" = "额度来源";
+"settings.refreshRate" = "刷新频率";
+"settings.refreshRate.value" = "60 秒";
+"settings.privacy" = "账号凭据只从本机读取并直接用于官方额度接口；位置坐标仅发送给天气服务以获取当地天气。";
+
+"login.enabled" = "已启用";
+"login.disabled" = "未启用";
+"login.requiresApproval" = "需要系统批准";
+"login.unknown" = "状态未知";
+
+"location.permissionDenied" = "定位未授权";
+"location.servicesDisabled" = "定位已关闭";
+"location.weatherFailed" = "天气同步失败";
+"location.current" = "当前位置";
+"error.quotaUnavailable" = "额度服务暂不可用";
+
+"weather.clear" = "晴";
+"weather.partlyCloudy" = "多云";
+"weather.cloudy" = "阴";
+"weather.fog" = "雾";
+"weather.rain" = "雨";
+"weather.snow" = "雪";
+"weather.storm" = "雷雨";
+"weather.changing" = "天气变化中";
+
+"time.daysHours" = "%d 天 %d 小时";
+"time.hoursMinutes" = "%d 小时 %d 分钟";
+"time.minutes" = "%d 分钟";

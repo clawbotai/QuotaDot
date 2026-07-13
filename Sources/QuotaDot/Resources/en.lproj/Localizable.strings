@@ -1,0 +1,73 @@
+"menu.loading" = "Reading quota…";
+"menu.show" = "Show Quota Window";
+"menu.refresh" = "Refresh Now";
+"menu.settings" = "Settings…";
+"menu.quit" = "Quit QuotaDot";
+"menu.weekly.short" = "week";
+
+"header.switchLanguage" = "Switch language";
+"status.cached" = "Using cached data";
+"status.healthy" = "Healthy";
+"status.warning" = "Needs attention";
+"status.critical" = "Quota critical";
+"status.connecting" = "Connecting";
+"footer.updated" = "%@ updated";
+"footer.waiting" = "Waiting for update";
+"empty.title" = "Quota unavailable";
+"empty.connecting" = "Connecting to quota services";
+
+"provider.connected" = "Connected";
+"provider.active" = "In use";
+"provider.idle" = "Stable";
+"quota.session" = "5-hour quota";
+"quota.weekly" = "Weekly quota";
+"quota.used" = "%d%% used";
+"quota.syncing" = "Syncing quota";
+"quota.resets" = "Resets %@";
+"quota.resetWaiting" = "Waiting for reset time";
+
+"credits.available" = "%d quota resets available";
+"credits.viewExpiry" = "View expiry";
+"credits.title" = "Quota reset credits";
+"credits.current" = "%d currently available";
+"credits.noExpiry" = "No expiry details returned";
+"credits.expires" = "Expires %@";
+
+"settings.general" = "General";
+"settings.language" = "Language";
+"settings.chinese" = "简体中文";
+"settings.english" = "English";
+"settings.launchAtLogin" = "Launch at login";
+"settings.launchAtLogin.detail" = "Start QuotaDot after you sign in to your Mac and keep the menu bar and floating quota available.";
+"settings.systemStatus" = "System status";
+"settings.approvalRequired" = "macOS needs you to allow QuotaDot in System Settings.";
+"settings.openLoginItems" = "Open Login Items";
+"settings.data" = "Data";
+"settings.quotaSource" = "Quota source";
+"settings.refreshRate" = "Refresh interval";
+"settings.refreshRate.value" = "60 seconds";
+"settings.privacy" = "Account credentials are read locally and sent only to the official quota endpoints; coordinates are sent only to the weather service for local conditions.";
+
+"login.enabled" = "Enabled";
+"login.disabled" = "Disabled";
+"login.requiresApproval" = "Approval required";
+"login.unknown" = "Unknown";
+
+"location.permissionDenied" = "Location not allowed";
+"location.servicesDisabled" = "Location disabled";
+"location.weatherFailed" = "Weather unavailable";
+"location.current" = "Current location";
+"error.quotaUnavailable" = "Quota services unavailable";
+
+"weather.clear" = "Clear";
+"weather.partlyCloudy" = "Partly cloudy";
+"weather.cloudy" = "Cloudy";
+"weather.fog" = "Fog";
+"weather.rain" = "Rain";
+"weather.snow" = "Snow";
+"weather.storm" = "Thunderstorm";
+"weather.changing" = "Changing weather";
+
+"time.daysHours" = "%d days %d hours";
+"time.hoursMinutes" = "%d hours %d minutes";
+"time.minutes" = "%d minutes";
