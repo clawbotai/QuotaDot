@@ -19,8 +19,11 @@ esac
 
 cd "$ROOT_DIR"
 if [[ "$SWIFT_CONFIGURATION" == "release" ]]; then
-  swift build -c release
-  BIN_PATH="$(swift build -c release --show-bin-path)"
+  # Public releases are Universal 2 so the same notarized DMG works on both
+  # Apple silicon and Intel Macs supported by macOS 14.
+  RELEASE_BUILD_ARGS=(-c release --arch arm64 --arch x86_64)
+  swift build "${RELEASE_BUILD_ARGS[@]}"
+  BIN_PATH="$(swift build "${RELEASE_BUILD_ARGS[@]}" --show-bin-path)"
 else
   swift build
   BIN_PATH="$(swift build --show-bin-path)"
