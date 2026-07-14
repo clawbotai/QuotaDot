@@ -3,12 +3,13 @@ import Foundation
 import OSLog
 import Security
 
-struct ClaudeDirectClient: Sendable {
+actor ClaudeDirectClient {
     private let usageURL = URL(string: "https://api.anthropic.com/api/oauth/usage")!
     private let tokenURL = URL(string: "https://platform.claude.com/v1/oauth/token")!
     private let clientID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
     private let maximumPayloadSize = 1_048_576
     private let logger = Logger(subsystem: "com.cmsjcm.QuotaDot", category: "claude-auth")
+    private var cachedCredential: LoadedCredential?
 
     func fetch() async throws -> ProviderUsage {
         var loaded = try loadCredentials()
@@ -52,11 +53,17 @@ struct ClaudeDirectClient: Sendable {
     }
 
     private func loadCredentials() throws -> LoadedCredential {
+        if let cachedCredential {
+            return cachedCredential
+        }
+
         if let token = ProcessInfo.processInfo.environment["CLAUDE_CODE_OAUTH_TOKEN"], !token.isEmpty {
-            return LoadedCredential(
+            let loaded = LoadedCredential(
                 credential: OAuthCredential(accessToken: token),
                 source: .environment
             )
+            cachedCredential = loaded
+            return loaded
         }
 
         let configDirectory = ProcessInfo.processInfo.environment["CLAUDE_CONFIG_DIR"]
@@ -65,35 +72,30 @@ struct ClaudeDirectClient: Sendable {
         let credentialFile = configDirectory.appendingPathComponent(".credentials.json")
         if let data = try? boundedData(from: credentialFile),
            let decoded = decodeCredential(from: data) {
-            return LoadedCredential(
+            let loaded = LoadedCredential(
                 credential: decoded.credential,
                 source: .file(url: credentialFile, encoding: decoded.encoding)
             )
+            cachedCredential = loaded
+            return loaded
         }
 
         for service in keychainServices() {
             if let data = try? keychainData(service: service),
                let decoded = decodeCredential(from: data) {
-                return LoadedCredential(
+                let loaded = LoadedCredential(
                     credential: decoded.credential,
                     source: .keychain(service: service, encoding: decoded.encoding)
                 )
+                cachedCredential = loaded
+                return loaded
             }
         }
         throw ClaudeError.authUnavailable
     }
 
     private func refreshOrReload(_ loaded: LoadedCredential) async throws -> LoadedCredential {
-        do {
-            return try await refresh(loaded)
-        } catch {
-            if let latest = try? loadCredentials(),
-               latest.credential.accessToken != loaded.credential.accessToken {
-                logger.info("Claude OAuth credentials were refreshed by another process")
-                return latest
-            }
-            throw error
-        }
+        try await refresh(loaded)
     }
 
     private func refresh(_ loaded: LoadedCredential) async throws -> LoadedCredential {
@@ -129,8 +131,10 @@ struct ClaudeDirectClient: Sendable {
         let responseBody = try JSONDecoder().decode(RefreshResponse.self, from: data)
         let refreshed = loaded.credential.merging(responseBody, fallbackRefreshToken: refreshToken)
         try persist(refreshed, to: loaded.source)
+        let result = LoadedCredential(credential: refreshed, source: loaded.source)
+        cachedCredential = result
         logger.info("Claude OAuth token refreshed and persisted")
-        return LoadedCredential(credential: refreshed, source: loaded.source)
+        return result
     }
 
     private func requestUsage(accessToken: String) async throws -> Data {
@@ -224,22 +228,18 @@ struct ClaudeDirectClient: Sendable {
     }
 
     private func keychainData(service: String) throws -> Data {
-        let process = Process()
-        let output = Pipe()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/security")
-        process.arguments = ["find-generic-password", "-s", service, "-w"]
-        process.standardOutput = output
-        process.standardError = FileHandle.nullDevice
-        try process.run()
-
-        let deadline = Date.now.addingTimeInterval(3)
-        while process.isRunning && Date.now < deadline {
-            Thread.sleep(forTimeInterval: 0.05)
+        let query: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecMatchLimit: kSecMatchLimitOne,
+            kSecReturnData: true
+        ]
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        guard status == errSecSuccess,
+              let data = item as? Data else {
+            throw ClaudeError.authUnavailable
         }
-        if process.isRunning { process.terminate() }
-        process.waitUntilExit()
-        guard process.terminationStatus == 0 else { throw ClaudeError.authUnavailable }
-        let data = output.fileHandleForReading.readDataToEndOfFile()
         guard !data.isEmpty, data.count <= 262_144 else { throw ClaudeError.authUnavailable }
         return data
     }
