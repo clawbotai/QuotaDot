@@ -1,9 +1,12 @@
 "menu.loading" = "Reading quota…";
 "menu.show" = "Show Quota Window";
+"menu.details" = "View Details";
 "menu.refresh" = "Refresh Now";
 "menu.settings" = "Settings…";
 "menu.quit" = "Quit QuotaDot";
 "menu.weekly.short" = "week";
+"menuBar.accessibility.remaining" = "QuotaDot, %@ remaining";
+"menuBar.accessibility.loading" = "QuotaDot, reading quota";
 
 "header.switchLanguage" = "Switch language";
 "status.cached" = "Using cached data";
@@ -46,7 +49,7 @@
 "settings.quotaSource" = "Quota source";
 "settings.refreshRate" = "Refresh interval";
 "settings.refreshRate.value" = "60 seconds";
-"settings.privacy" = "Account credentials are read locally and sent only to the official quota endpoints; coordinates are sent only to the weather service for local conditions.";
+"settings.privacy" = "Credentials are read locally for official quota endpoints. Token history is calculated from local records using a numeric index that never copies prompts or responses. Coordinates go only to the weather service.";
 
 "login.enabled" = "Enabled";
 "login.disabled" = "Disabled";
@@ -71,3 +74,40 @@
 "time.daysHours" = "%d days %d hours";
 "time.hoursMinutes" = "%d hours %d minutes";
 "time.minutes" = "%d minutes";
+
+"history.title" = "Token Usage Details";
+"history.subtitle" = "Local history still available on this Mac from Codex and Claude Code";
+"history.total" = "Local history total";
+"history.today" = "Today";
+"history.month" = "This month";
+"history.week" = "This week";
+"history.calendarDay" = "Current local calendar day";
+"history.calendarMonth" = "Current calendar month";
+"history.calendarWeek" = "Current calendar week";
+"history.since" = "Since %@";
+"history.noActivity" = "No token activity found";
+"history.refresh" = "Recalculate";
+"history.loading" = "Calculating local token history";
+"history.loading.detail" = "The first scan reads local history files and may take a little while. A local index makes later scans faster.";
+"history.error.title" = "Token history unavailable";
+"history.error" = "Make sure local Codex or Claude Code history is readable, then try again.";
+"history.activity.title" = "Token Activity";
+"history.activity.daily" = "Daily";
+"history.activity.weekly" = "Weekly";
+"history.activity.cumulative" = "Cumulative";
+"history.activity.less" = "Less";
+"history.activity.more" = "More";
+"history.activity.through" = "Through %@";
+"history.tools.title" = "Usage by AI tool";
+"history.tools.tool" = "Tool";
+"history.tools.total" = "Total";
+"history.estimate.title" = "Estimated remaining";
+"history.estimate.value" = "About %@";
+"history.estimate.fiveHour" = "Within 5 hours";
+"history.estimate.weekly" = "Within this quota week";
+"history.estimate.insufficient" = "Not enough local data";
+"history.estimate.note" = "Estimated from tokens recorded on this Mac during the current quota window and the provider's remaining percentage. Model mix, cache weighting, and usage on other devices can affect the result.";
+"history.estimate.help" = "This Mac recorded %@ tokens in the current quota window; the estimate also uses the provider's remaining percentage.";
+"history.estimate.help.unavailable" = "No usable quota activity, window metadata, or local sample is available yet.";
+"history.source" = "Calculated from Codex and Claude Code history still stored on this Mac (%d files scanned). Deleted or remote-only history cannot be included.";
+"history.source.unreadable" = "%d additional files could not be read.";

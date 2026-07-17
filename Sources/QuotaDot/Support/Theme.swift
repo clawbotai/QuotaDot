@@ -121,4 +121,18 @@ extension View {
             self.background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         }
     }
+
+    @ViewBuilder
+    func quotaContentGlass(cornerRadius: CGFloat) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        if #available(macOS 26.0, *) {
+            self.glassEffect(.regular, in: shape)
+        } else {
+            self
+                .background(.ultraThinMaterial, in: shape)
+                .overlay {
+                    shape.strokeBorder(.primary.opacity(0.07), lineWidth: 0.75)
+                }
+        }
+    }
 }

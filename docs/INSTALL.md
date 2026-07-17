@@ -14,7 +14,7 @@ Only install a release DMG that is signed with Developer ID and notarized by App
 3. Drag QuotaDot into the Applications folder.
 4. Launch QuotaDot from Applications.
 
-QuotaDot is a menu bar application and does not appear in the Dock. After launch, the menu bar shows a dual-ring icon and the lowest remaining quota percentage. A floating window appears on the desktop and collapses automatically when it is not being inspected.
+QuotaDot is a menu bar application and does not appear in the Dock. After launch, the menu bar shows the monochrome QuotaDot Q glyph and the lowest remaining quota percentage. A floating window appears on the desktop and collapses automatically when it is not being inspected.
 
 If no signed and notarized DMG is listed on the Releases page, a public end-user build is not available yet. Developers can build from source by following the instructions in the repository README.
 

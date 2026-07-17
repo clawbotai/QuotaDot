@@ -1,9 +1,12 @@
 "menu.loading" = "正在读取额度…";
 "menu.show" = "显示悬浮额度";
+"menu.details" = "查看详细";
 "menu.refresh" = "立即刷新";
 "menu.settings" = "设置…";
 "menu.quit" = "退出 QuotaDot";
 "menu.weekly.short" = "周";
+"menuBar.accessibility.remaining" = "QuotaDot，剩余额度 %@";
+"menuBar.accessibility.loading" = "QuotaDot，正在读取额度";
 
 "header.switchLanguage" = "切换语言";
 "status.cached" = "部分数据暂存";
@@ -46,7 +49,7 @@
 "settings.quotaSource" = "额度来源";
 "settings.refreshRate" = "刷新频率";
 "settings.refreshRate.value" = "60 秒";
-"settings.privacy" = "账号凭据只从本机读取并直接用于官方额度接口；位置坐标仅发送给天气服务以获取当地天气。";
+"settings.privacy" = "账号凭据只从本机读取并直接用于官方额度接口；Token 历史仅从本机记录计算并保存数值索引，不复制提示词或回复；位置坐标仅发送给天气服务。";
 
 "login.enabled" = "已启用";
 "login.disabled" = "未启用";
@@ -71,3 +74,40 @@
 "time.daysHours" = "%d 天 %d 小时";
 "time.hoursMinutes" = "%d 小时 %d 分钟";
 "time.minutes" = "%d 分钟";
+
+"history.title" = "Token 使用详情";
+"history.subtitle" = "统计这台 Mac 上仍保留的 Codex 与 Claude Code 本机历史记录";
+"history.total" = "本机记录累计";
+"history.today" = "今日消耗";
+"history.month" = "本月";
+"history.week" = "本周";
+"history.calendarDay" = "按本地自然日统计";
+"history.calendarMonth" = "按当前自然月统计";
+"history.calendarWeek" = "按当前自然周统计";
+"history.since" = "自 %@ 起";
+"history.noActivity" = "暂未发现 Token 记录";
+"history.refresh" = "重新统计";
+"history.loading" = "正在统计本机 Token 历史";
+"history.loading.detail" = "首次需要读取本机历史文件，数据较多时可能需要一点时间；完成后会使用本地索引加速。";
+"history.error.title" = "无法读取 Token 历史";
+"history.error" = "请确认本机 Codex 或 Claude Code 的历史目录可读取，然后重试。";
+"history.activity.title" = "Token 活动";
+"history.activity.daily" = "每日";
+"history.activity.weekly" = "每周";
+"history.activity.cumulative" = "累计";
+"history.activity.less" = "较少";
+"history.activity.more" = "较多";
+"history.activity.through" = "截至 %@";
+"history.tools.title" = "各 AI 工具消耗";
+"history.tools.tool" = "工具";
+"history.tools.total" = "累计";
+"history.estimate.title" = "预计还可消耗";
+"history.estimate.value" = "约 %@";
+"history.estimate.fiveHour" = "5 小时内";
+"history.estimate.weekly" = "当前周额度内";
+"history.estimate.insufficient" = "本机样本不足";
+"history.estimate.note" = "按本机当前额度窗口内的 Token 与服务商剩余百分比换算，仅供估算；模型、缓存权重及其他设备消耗会造成偏差。";
+"history.estimate.help" = "本机在当前额度窗口内已记录 %@ Token，并结合服务商剩余百分比换算。";
+"history.estimate.help.unavailable" = "额度尚未开始消耗、窗口信息缺失或本机样本不足，暂无法估算。";
+"history.source" = "基于本机仍保留的 Codex / Claude Code 历史文件统计（已扫描 %d 个文件）。已删除或不在本机的记录无法计入。";
+"history.source.unreadable" = "另有 %d 个文件暂时无法读取。";

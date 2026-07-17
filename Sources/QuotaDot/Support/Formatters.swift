@@ -27,6 +27,33 @@ enum QuotaFormatters {
         return "\(Int((remaining * 100).rounded()))%"
     }
 
+    static func tokenCount(_ tokens: Int64, language: AppLanguage, compact: Bool = true) -> String {
+        guard compact else {
+            let formatter = NumberFormatter()
+            formatter.locale = language.locale
+            formatter.numberStyle = .decimal
+            formatter.maximumFractionDigits = 0
+            return formatter.string(from: NSNumber(value: tokens)) ?? "\(tokens)"
+        }
+
+        let value = Double(tokens)
+        if language == .simplifiedChinese {
+            if value >= 100_000_000 { return compactToken(value / 100_000_000, suffix: "亿") }
+            if value >= 10_000 { return compactToken(value / 10_000, suffix: "万") }
+        } else {
+            if value >= 1_000_000_000_000 { return compactToken(value / 1_000_000_000_000, suffix: "T") }
+            if value >= 1_000_000_000 { return compactToken(value / 1_000_000_000, suffix: "B") }
+            if value >= 1_000_000 { return compactToken(value / 1_000_000, suffix: "M") }
+            if value >= 1_000 { return compactToken(value / 1_000, suffix: "K") }
+        }
+        return tokenCount(tokens, language: language, compact: false)
+    }
+
+    private static func compactToken(_ value: Double, suffix: String) -> String {
+        let digits = value >= 100 ? 0 : value >= 10 ? 1 : 2
+        return String(format: "%.*f%@", digits, value, suffix)
+    }
+
     @MainActor static func relativeReset(from date: Date, language: LanguageSettings, now: Date = .now) -> String {
         let seconds = max(date.timeIntervalSince(now), 0)
         let hours = Int(seconds) / 3600

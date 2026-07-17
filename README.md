@@ -23,7 +23,8 @@ QuotaDot is a native macOS menu bar and floating quota companion for Codex and C
 - Collapses into separate provider badges when the pointer leaves and expands into a unified detail panel on hover.
 - Adapts the background to quota health and current local weather.
 - Colors each quota ring independently: blue above 50%, amber from 10% through 50%, and coral at 10% or below.
-- Keeps a compact dual-ring indicator and the lowest remaining percentage in the menu bar.
+- Keeps a compact monochrome QuotaDot Q glyph and the lowest remaining percentage in the menu bar.
+- Opens a local token-history detail window with all-time, today, calendar-month, calendar-week, provider breakdown, activity heatmap, and clearly labeled remaining-token estimates for each provider's active five-hour or weekly quota window.
 - Supports instant Simplified Chinese and English switching in the floating panel and Settings, with the preference saved locally.
 - Supports launching automatically after macOS login.
 
@@ -45,6 +46,7 @@ QuotaDot does not operate an account or quota relay server:
 - Codex credentials are loaded read-only from the local `CODEX_HOME/auth.json` file, which defaults to `~/.codex/auth.json`.
 - Claude credentials are read from Claude Code's local secure storage and are written back only when the official token refresh flow requires it.
 - Quota requests are sent directly to the corresponding provider endpoints.
+- Token-history totals are calculated locally from Codex and Claude Code JSONL history still present on the Mac. QuotaDot stores only local indexing metadata—source file paths, cursors, session/message identifiers, timestamps—and numeric token counts in Application Support; prompts and responses are not copied into it.
 - Location coordinates are used only to request local weather. They are not combined with quota credentials or written to project logs.
 
 See [PRIVACY.md](PRIVACY.md). By using this project, you acknowledge that it depends on local authentication formats and quota endpoints currently exposed by third-party services, which may change in the future.
