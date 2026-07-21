@@ -161,6 +161,13 @@ struct ProviderLogo: View {
                     .renderingMode(provider.providerId.lowercased() == "claude" ? .template : .original)
                     .foregroundStyle(provider.accent)
                     .scaledToFit()
+            } else if provider.providerId.lowercased() == "kimi" {
+                KimiProviderMark(size: size)
+            } else {
+                Image(systemName: "sparkles")
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(provider.accent)
             }
         }
         .frame(width: size, height: size)
@@ -168,8 +175,32 @@ struct ProviderLogo: View {
     }
 
     private var providerImage: NSImage? {
-        let name = provider.providerId.lowercased() == "claude" ? "claude-official" : "codex-official"
+        let name: String
+        switch provider.providerId.lowercased() {
+        case "codex": name = "codex-official"
+        case "claude": name = "claude-official"
+        default: return nil
+        }
         guard let url = QuotaResourceBundle.current.url(forResource: name, withExtension: "png") else { return nil }
         return NSImage(contentsOf: url)
+    }
+}
+
+struct KimiProviderMark: View {
+    let size: CGFloat
+
+    var body: some View {
+        Text("K")
+            .font(.system(size: size * 0.58, weight: .bold, design: .rounded))
+            .foregroundStyle(.white)
+            .frame(width: size, height: size)
+            .background(
+                LinearGradient(
+                    colors: [Color(red: 0.34, green: 0.47, blue: 0.98), Color(red: 0.55, green: 0.31, blue: 0.92)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
+                in: RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
+            )
     }
 }

@@ -18,14 +18,17 @@ final class QuotaStore {
     private let locationClient = LocationClient()
     private let codexDirectClient = CodexDirectClient()
     private let claudeDirectClient = ClaudeDirectClient()
+    private let kimiDirectClient = KimiDirectClient()
     private let logger = Logger(subsystem: "com.cmsjcm.QuotaDot", category: "quota")
     private var activityTask: Task<Void, Never>?
     private var weatherTask: Task<Void, Never>?
     private var openUsageTask: Task<Void, Never>?
     private var codexTask: Task<Void, Never>?
     private var claudeTask: Task<Void, Never>?
+    private var kimiTask: Task<Void, Never>?
     private var directCodexAvailable = false
     private var directClaudeAvailable = false
+    private var directKimiAvailable = false
 
     var isConsuming: Bool { !activeProviderIds.isEmpty }
     func isConsuming(_ provider: ProviderUsage) -> Bool {
@@ -47,6 +50,7 @@ final class QuotaStore {
             openUsageTask?.cancel()
             codexTask?.cancel()
             claudeTask?.cancel()
+            kimiTask?.cancel()
         }
         await refresh()
         while !Task.isCancelled {
@@ -92,6 +96,7 @@ final class QuotaStore {
         launchOpenUsageRefresh()
         launchCodexRefresh()
         launchClaudeRefresh()
+        launchKimiRefresh()
     }
 
     private func launchOpenUsageRefresh() {
@@ -127,6 +132,17 @@ final class QuotaStore {
         }
     }
 
+    private func launchKimiRefresh() {
+        guard kimiTask == nil else { return }
+        let client = kimiDirectClient
+        kimiTask = Task { [weak self] in
+            let result = try? await client.fetch()
+            guard let self, !Task.isCancelled else { return }
+            self.applyDirectKimi(result)
+            self.kimiTask = nil
+        }
+    }
+
     private func applyOpenUsage(_ result: [ProviderUsage]?) {
         guard let result else {
             logger.info("OpenUsage refresh failed")
@@ -139,6 +155,7 @@ final class QuotaStore {
             let providerId = provider.providerId.lowercased()
             if providerId == "codex", directCodexAvailable { continue }
             if providerId == "claude", directClaudeAvailable { continue }
+            if providerId == "kimi", directKimiAvailable { continue }
             replace(provider, in: &fresh)
         }
         commit(fresh)
@@ -174,6 +191,20 @@ final class QuotaStore {
         logger.info("Claude direct refresh succeeded")
     }
 
+    private func applyDirectKimi(_ result: ProviderUsage?) {
+        guard let result else {
+            logger.info("Kimi direct refresh failed")
+            setFailureMessageIfNeeded()
+            return
+        }
+
+        directKimiAvailable = true
+        var fresh = providers
+        replace(result, in: &fresh)
+        commit(fresh)
+        logger.info("Kimi direct refresh succeeded")
+    }
+
     private func replace(_ provider: ProviderUsage, in providers: inout [ProviderUsage]) {
         providers.removeAll { $0.providerId.caseInsensitiveCompare(provider.providerId) == .orderedSame }
         providers.append(provider)
@@ -181,8 +212,9 @@ final class QuotaStore {
 
     private func commit(_ fresh: [ProviderUsage]) {
         let sorted = fresh.sorted {
-            if $0.providerId.lowercased() == "codex" { return true }
-            if $1.providerId.lowercased() == "codex" { return false }
+            let leftRank = providerSortRank($0.providerId)
+            let rightRank = providerSortRank($1.providerId)
+            if leftRank != rightRank { return leftRank < rightRank }
             return $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
         }
         providers = sorted
@@ -193,6 +225,15 @@ final class QuotaStore {
     private func setFailureMessageIfNeeded() {
         guard providers.isEmpty else { return }
         errorMessageKey = "error.quotaUnavailable"
+    }
+
+    private func providerSortRank(_ providerId: String) -> Int {
+        switch providerId.lowercased() {
+        case "codex": 0
+        case "claude": 1
+        case "kimi": 2
+        default: 3
+        }
     }
 
     private func monitorLocalActivity() async {
@@ -219,6 +260,12 @@ final class QuotaStore {
 
         let claudeDirectory = home.appendingPathComponent(".claude/projects", isDirectory: true)
         if hasRecentlyModifiedJSONL(in: claudeDirectory, now: now) { active.insert("claude") }
+
+        let kimiHome = ProcessInfo.processInfo.environment["KIMI_CODE_HOME"].flatMap { value in
+            value.isEmpty ? nil : URL(fileURLWithPath: value, isDirectory: true)
+        } ?? home.appendingPathComponent(".kimi-code", isDirectory: true)
+        let kimiDirectory = kimiHome.appendingPathComponent("sessions", isDirectory: true)
+        if hasRecentlyModifiedJSONL(in: kimiDirectory, now: now) { active.insert("kimi") }
         return active
     }
 

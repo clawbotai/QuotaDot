@@ -65,6 +65,51 @@ struct QuotaModelsTests {
         #expect(!ActivityDetectionPolicy.isActive(modifiedAt: now.addingTimeInterval(5), now: now))
     }
 
+    @Test func parsesKimiWeeklyAndFiveHourQuota() throws {
+        let data = Data(#"""
+        {
+          "usage":{"limit":"100","remaining":"60","resetTime":"2026-07-27T16:21:49.350569Z"},
+          "limits":[{
+            "window":{"duration":300,"timeUnit":"TIME_UNIT_MINUTE"},
+            "detail":{"limit":"100","remaining":"80","resetTime":"2026-07-20T21:21:49.350569Z"}
+          }]
+        }
+        """#.utf8)
+        let now = Date(timeIntervalSince1970: 1_784_564_500)
+        let provider = try KimiUsageParser.provider(from: data, now: now)
+
+        #expect(provider.providerId == "kimi")
+        #expect(provider.session?.remainingPercent == 0.8)
+        #expect(provider.session?.periodDurationMs == 18_000_000)
+        #expect(provider.weekly?.remainingPercent == 0.6)
+        #expect(provider.weekly?.resetsAt != nil)
+    }
+
+    @Test func refreshesKimiCredentialWithinItsOfficialLeeway() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+
+        #expect(KimiCredentialPolicy.shouldRefresh(
+            expiresAtSeconds: now.addingTimeInterval(299).timeIntervalSince1970,
+            expiresInSeconds: 3_600,
+            now: now
+        ))
+        #expect(!KimiCredentialPolicy.shouldRefresh(
+            expiresAtSeconds: now.addingTimeInterval(301).timeIntervalSince1970,
+            expiresInSeconds: 3_600,
+            now: now
+        ))
+        #expect(KimiCredentialPolicy.shouldRefresh(
+            expiresAtSeconds: now.addingTimeInterval(59).timeIntervalSince1970,
+            expiresInSeconds: 120,
+            now: now
+        ))
+        #expect(!KimiCredentialPolicy.shouldRefresh(
+            expiresAtSeconds: nil,
+            expiresInSeconds: nil,
+            now: now
+        ))
+    }
+
     @Test func refreshesClaudeCredentialBeforeItActuallyExpires() {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let insideLeeway = Int64(now.addingTimeInterval(4 * 60).timeIntervalSince1970 * 1_000)

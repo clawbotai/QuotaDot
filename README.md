@@ -4,7 +4,7 @@
 
 <h1 align="center">QuotaDot</h1>
 
-<p align="center">A quiet, native quota companion for Codex and Claude on macOS.</p>
+<p align="center">A quiet, native quota companion for Codex, Claude, and Kimi on macOS.</p>
 
 <p align="center">
   <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-111827">
@@ -12,11 +12,11 @@
   <img alt="MIT License" src="https://img.shields.io/badge/License-MIT-2563EB">
 </p>
 
-QuotaDot is a native macOS menu bar and floating quota companion for Codex and Claude. It reads locally authenticated sessions and presents remaining quota, reset times, and current activity in a restrained Liquid Glass interface.
+QuotaDot is a native macOS menu bar and floating quota companion for Codex, Claude, and Kimi. It reads locally authenticated sessions and presents remaining quota, reset times, and current activity in a restrained Liquid Glass interface.
 
 ## Features
 
-- Shows Codex and Claude together or independently; providers that are not signed in do not reserve space.
+- Shows Codex, Claude, and Kimi together or independently; providers that are not signed in do not reserve space.
 - Detects the quota windows currently returned by each service. A temporarily unavailable five-hour window is hidden automatically and reappears when the service restores it.
 - Displays reset times, available Codex quota resets, and the expiration time of each reset opportunity when the service provides that data.
 - Detects local Codex and Claude activity and highlights only the provider currently in use.
@@ -35,7 +35,7 @@ Public builds must be signed with a Developer ID Application certificate and not
 1. Download the latest `QuotaDot-x.y.z.dmg` from [GitHub Releases](https://github.com/MeowkingCP/QuotaDot/releases).
 2. Open the DMG and drag QuotaDot into Applications.
 3. Launch QuotaDot and allow location access if you want the live weather background.
-4. Make sure Codex and/or Claude Code is already signed in for the current macOS user.
+4. Make sure Codex, Claude Code, and/or Kimi Code is already signed in for the current macOS user.
 
 No unsigned build is published as an end-user release. Files containing `UNSIGNED` in their name are local development artifacts and must not be redistributed. See the [installation guide](docs/INSTALL.md) for details.
 
@@ -45,8 +45,9 @@ QuotaDot does not operate an account or quota relay server:
 
 - Codex credentials are loaded read-only from the local `CODEX_HOME/auth.json` file, which defaults to `~/.codex/auth.json`.
 - Claude credentials are read from Claude Code's local secure storage and are written back only when the official token refresh flow requires it.
+- Kimi credentials are loaded read-only from `KIMI_CODE_HOME/credentials/kimi-code.json`, which defaults to `~/.kimi-code/credentials/kimi-code.json`.
 - Quota requests are sent directly to the corresponding provider endpoints.
-- Token-history totals are calculated locally from Codex and Claude Code JSONL history still present on the Mac. QuotaDot stores only local indexing metadata—source file paths, cursors, session/message identifiers, timestamps—and numeric token counts in Application Support; prompts and responses are not copied into it.
+- Token-history totals are calculated locally from Codex, Claude Code, and Kimi Code JSONL history still present on the Mac. QuotaDot stores only local indexing metadata—source file paths, cursors, session/message identifiers, timestamps—and numeric token counts in Application Support; prompts and responses are not copied into it.
 - Location coordinates are used only to request local weather. They are not combined with quota credentials or written to project logs.
 
 See [PRIVACY.md](PRIVACY.md). By using this project, you acknowledge that it depends on local authentication formats and quota endpoints currently exposed by third-party services, which may change in the future.
@@ -76,7 +77,7 @@ Maintainers can find the signing, notarization, and DMG workflow in the [release
 Sources/QuotaDot/
   App/        Application lifecycle and menu bar entry point
   Models/     Quota and weather data models
-  Services/   Codex, Claude, location, weather, and login-item clients
+  Services/   Codex, Claude, Kimi, location, weather, and login-item clients
   Stores/     Refresh, merge, and activity state
   Views/      Liquid Glass floating interface and Settings
 script/       Build, icon generation, signing, and release scripts

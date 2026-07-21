@@ -49,7 +49,7 @@
 "settings.quotaSource" = "额度来源";
 "settings.refreshRate" = "刷新频率";
 "settings.refreshRate.value" = "60 秒";
-"settings.privacy" = "账号凭据只从本机读取并直接用于官方额度接口；Token 历史仅从本机记录计算并保存数值索引，不复制提示词或回复；位置坐标仅发送给天气服务。";
+"settings.privacy" = "Codex、Claude 与 Kimi 账号凭据只从本机读取并直接用于各自官方额度接口；Token 历史仅从本机记录计算并保存数值索引，不复制提示词或回复；位置坐标仅发送给天气服务。";
 
 "login.enabled" = "已启用";
 "login.disabled" = "未启用";
@@ -76,7 +76,7 @@
 "time.minutes" = "%d 分钟";
 
 "history.title" = "Token 使用详情";
-"history.subtitle" = "统计这台 Mac 上仍保留的 Codex 与 Claude Code 本机历史记录";
+"history.subtitle" = "统计这台 Mac 上仍保留的 Codex、Claude Code 与 Kimi Code 本机历史记录";
 "history.total" = "本机记录累计";
 "history.today" = "今日消耗";
 "history.month" = "本月";
@@ -90,7 +90,7 @@
 "history.loading" = "正在统计本机 Token 历史";
 "history.loading.detail" = "首次需要读取本机历史文件，数据较多时可能需要一点时间；完成后会使用本地索引加速。";
 "history.error.title" = "无法读取 Token 历史";
-"history.error" = "请确认本机 Codex 或 Claude Code 的历史目录可读取，然后重试。";
+"history.error" = "请确认本机 Codex、Claude Code 或 Kimi Code 的历史目录可读取，然后重试。";
 "history.activity.title" = "Token 活动";
 "history.activity.daily" = "每日";
 "history.activity.weekly" = "每周";
@@ -109,5 +109,5 @@
 "history.estimate.note" = "按本机当前额度窗口内的 Token 与服务商剩余百分比换算，仅供估算；模型、缓存权重及其他设备消耗会造成偏差。";
 "history.estimate.help" = "本机在当前额度窗口内已记录 %@ Token，并结合服务商剩余百分比换算。";
 "history.estimate.help.unavailable" = "额度尚未开始消耗、窗口信息缺失或本机样本不足，暂无法估算。";
-"history.source" = "基于本机仍保留的 Codex / Claude Code 历史文件统计（已扫描 %d 个文件）。已删除或不在本机的记录无法计入。";
+"history.source" = "基于本机仍保留的 Codex / Claude Code / Kimi Code 历史文件统计（已扫描 %d 个文件）。已删除或不在本机的记录无法计入。";
 "history.source.unreadable" = "另有 %d 个文件暂时无法读取。";

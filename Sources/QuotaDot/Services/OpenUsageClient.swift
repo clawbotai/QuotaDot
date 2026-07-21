@@ -17,8 +17,12 @@ struct OpenUsageClient: Sendable {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601WithFractionalSeconds
         return try decoder.decode([ProviderUsage].self, from: data)
-            .filter { ["codex", "claude"].contains($0.providerId.lowercased()) }
-            .sorted { $0.providerId.lowercased() == "codex" && $1.providerId.lowercased() != "codex" }
+            .filter { ["codex", "claude", "kimi"].contains($0.providerId.lowercased()) }
+            .sorted {
+                let order = ["codex", "claude", "kimi"]
+                return (order.firstIndex(of: $0.providerId.lowercased()) ?? order.count)
+                    < (order.firstIndex(of: $1.providerId.lowercased()) ?? order.count)
+            }
     }
 }
 

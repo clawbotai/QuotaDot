@@ -5,6 +5,7 @@ dist/
 .codex/
 .product-design/
 design-qa.md
+pet-runs/
 *.dmg
 *.zip
 

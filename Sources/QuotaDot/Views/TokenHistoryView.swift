@@ -219,7 +219,7 @@ struct TokenHistoryView: View {
                     .font(.system(size: 14, weight: .semibold))
                 ProgressView(value: providerShare(provider))
                     .progressViewStyle(.linear)
-                    .tint(provider.id == "codex" ? .blue : .orange)
+                    .tint(providerTint(provider.id))
                     .frame(width: 160)
             }
         }
@@ -272,6 +272,14 @@ struct TokenHistoryView: View {
     private func providerShare(_ provider: ProviderTokenUsage) -> Double {
         guard store.snapshot.totalTokens > 0 else { return 0 }
         return Double(provider.totalTokens) / Double(store.snapshot.totalTokens)
+    }
+
+    private func providerTint(_ providerId: String) -> Color {
+        switch providerId.lowercased() {
+        case "claude": .orange
+        case "kimi": .purple
+        default: .blue
+        }
     }
 
     private func estimate(for provider: ProviderTokenUsage) -> TokenCapacityEstimate? {
@@ -379,6 +387,8 @@ private struct TokenToolLogo: View {
                     .renderingMode(providerId == "claude" ? .template : .original)
                     .foregroundStyle(providerId == "claude" ? .orange : .primary)
                     .scaledToFit()
+            } else if providerId.lowercased() == "kimi" {
+                KimiProviderMark(size: 28)
             } else {
                 Image(systemName: "sparkles")
             }
@@ -387,7 +397,12 @@ private struct TokenToolLogo: View {
     }
 
     private var image: NSImage? {
-        let resourceName = providerId == "claude" ? "claude-official" : "codex-official"
+        let resourceName: String
+        switch providerId.lowercased() {
+        case "codex": resourceName = "codex-official"
+        case "claude": resourceName = "claude-official"
+        default: return nil
+        }
         guard let url = QuotaResourceBundle.current.url(forResource: resourceName, withExtension: "png") else { return nil }
         return NSImage(contentsOf: url)
     }

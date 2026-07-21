@@ -59,6 +59,18 @@ struct TokenHistoryTests {
         #expect(usage["2026-07-17"] == 108)
     }
 
+    @Test func kimiCountsCompletedStepUsageWithoutReadingConversationText() throws {
+        let usage = TokenHistoryScanner.kimiDailyUsage(
+            from: [
+                kimiEvent(timestamp: "2026-07-17T03:00:00Z", input: 10, cacheCreation: 20, cacheRead: 30, output: 40),
+                data(#"{"type":"assistant.delta","time":1784257201000,"delta":"ignored text"}"#)
+            ],
+            calendar: utcCalendar
+        )
+
+        #expect(usage["2026-07-17"] == 100)
+    }
+
     @Test func scanResumesAnAppendedFileWithoutDoubleCounting() throws {
         let fixture = try HistoryFixture()
         defer { fixture.remove() }
@@ -575,6 +587,27 @@ struct TokenHistoryTests {
                     "output_tokens": output,
                     "iterations": [["input_tokens": 9_999]]
                 ]
+            ]
+        ])
+    }
+
+    private func kimiEvent(
+        timestamp: String,
+        input: Int64,
+        cacheCreation: Int64,
+        cacheRead: Int64,
+        output: Int64
+    ) -> Data {
+        json([
+            "type": "turn.step.completed",
+            "time": instant(timestamp).timeIntervalSince1970 * 1_000,
+            "turnId": 1,
+            "step": 1,
+            "usage": [
+                "inputOther": input,
+                "inputCacheCreation": cacheCreation,
+                "inputCacheRead": cacheRead,
+                "output": output
             ]
         ])
     }

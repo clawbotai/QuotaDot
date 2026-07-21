@@ -1,7 +1,7 @@
 import Foundation
 
 enum TokenHistoryScanner {
-    private static let cacheVersion = 5
+    private static let cacheVersion = 6
     private static let readChunkSize = 65_536
     private static let irrelevantLinePrefixLimit = 65_536
     private static let relevantLineHardLimit = 16 * 1_024 * 1_024
@@ -72,6 +72,12 @@ enum TokenHistoryScanner {
         return aggregateClaude(messages: messages, calendar: calendar, recentRange: nil).daily
     }
 
+    static func kimiDailyUsage(from lines: [Data], calendar: Calendar = .current) -> [String: Int64] {
+        var entry = CachedFileIndex.empty(source: .kimi, inode: 0)
+        for line in lines { indexKimiLine(line, into: &entry) }
+        return aggregateKimi(entry: entry, calendar: calendar, recentRange: nil).daily
+    }
+
     private static func index(file: HistoryFile, resuming cached: CachedFileIndex?) throws -> CachedFileIndex {
         if let cached, cached.isUnchanged(file) { return cached }
 
@@ -86,6 +92,7 @@ enum TokenHistoryScanner {
             switch file.source {
             case .codex: indexCodexLine(Data(line), into: &entry)
             case .claude: indexClaudeLine(Data(line), into: &entry)
+            case .kimi: indexKimiLine(Data(line), into: &entry)
             }
         }
 
@@ -123,6 +130,14 @@ enum TokenHistoryScanner {
     private static func indexClaudeLine(_ line: Data, into entry: inout CachedFileIndex) {
         guard let record = TokenHistoryParser.claudeRecord(from: line) else { return }
         merge(record.cached, into: &entry.claudeMessages)
+    }
+
+    private static func indexKimiLine(_ line: Data, into entry: inout CachedFileIndex) {
+        guard let record = TokenHistoryParser.kimiRecord(from: line) else { return }
+        entry.kimiEvents.append(CachedKimiEvent(
+            timestampMilliseconds: record.timestampMilliseconds,
+            tokens: record.totalTokens
+        ))
     }
 
     private static func aggregate(
@@ -179,6 +194,16 @@ enum TokenHistoryScanner {
         recentUsage.append(contentsOf: claudeUsage.recent.map {
             TimedProviderTokenUsage(providerId: HistorySource.claude.rawValue, timestamp: $0.timestamp, tokens: $0.tokens)
         })
+
+        var kimiDaily: [String: Int64] = [:]
+        for entry in entries where entry.source == .kimi {
+            let usage = aggregateKimi(entry: entry, calendar: calendar, recentRange: recentRange)
+            merge(usage.daily, into: &kimiDaily)
+            recentUsage.append(contentsOf: usage.recent.map {
+                TimedProviderTokenUsage(providerId: HistorySource.kimi.rawValue, timestamp: $0.timestamp, tokens: $0.tokens)
+            })
+        }
+        byProvider[.kimi] = kimiDaily
 
         return makeSnapshot(
             byProvider: byProvider,
@@ -267,6 +292,23 @@ enum TokenHistoryScanner {
         return ProviderHistoryAggregation(daily: daily, recent: recent)
     }
 
+    private static func aggregateKimi(
+        entry: CachedFileIndex,
+        calendar: Calendar,
+        recentRange: ClosedRange<Date>?
+    ) -> ProviderHistoryAggregation {
+        var daily: [String: Int64] = [:]
+        var recent: [TimedTokenContribution] = []
+        for event in entry.kimiEvents where event.tokens > 0 {
+            let date = Date(timeIntervalSince1970: event.timestampMilliseconds / 1_000)
+            daily[dayKey(for: date, calendar: calendar), default: 0] += event.tokens
+            if recentRange?.contains(date) == true {
+                recent.append(TimedTokenContribution(timestamp: date, tokens: event.tokens))
+            }
+        }
+        return ProviderHistoryAggregation(daily: daily, recent: recent)
+    }
+
     private static func makeSnapshot(
         byProvider: [HistorySource: [String: Int64]],
         recentUsage: [TimedProviderTokenUsage],
@@ -339,10 +381,13 @@ enum TokenHistoryScanner {
         let codexHome = codexHome(homeDirectory: homeDirectory, environment: environment)
         let claudeHome = environment["CLAUDE_CONFIG_DIR"].flatMap { $0.isEmpty ? nil : URL(fileURLWithPath: $0, isDirectory: true) }
             ?? homeDirectory.appendingPathComponent(".claude", isDirectory: true)
+        let kimiHome = environment["KIMI_CODE_HOME"].flatMap { $0.isEmpty ? nil : URL(fileURLWithPath: $0, isDirectory: true) }
+            ?? homeDirectory.appendingPathComponent(".kimi-code", isDirectory: true)
         return [
             HistorySourceDirectory(source: .codex, url: codexHome.appendingPathComponent("sessions", isDirectory: true)),
             HistorySourceDirectory(source: .codex, url: codexHome.appendingPathComponent("archived_sessions", isDirectory: true)),
-            HistorySourceDirectory(source: .claude, url: claudeHome.appendingPathComponent("projects", isDirectory: true))
+            HistorySourceDirectory(source: .claude, url: claudeHome.appendingPathComponent("projects", isDirectory: true)),
+            HistorySourceDirectory(source: .kimi, url: kimiHome.appendingPathComponent("sessions", isDirectory: true))
         ]
     }
 
@@ -503,6 +548,8 @@ enum TokenHistoryScanner {
         case .claude:
             return contains(data, "\"type\":\"assistant\"")
                 || contains(data, "\"role\":\"assistant\"") && contains(data, "\"message\"")
+        case .kimi:
+            return contains(data, "\"type\":\"turn.step.completed\"") && contains(data, "\"usage\"")
         }
     }
 
@@ -514,6 +561,8 @@ enum TokenHistoryScanner {
                 || contains(data, "event_msg") && contains(data, "token_count")
         case .claude:
             return contains(data, "\"type\":\"assistant\"") && contains(data, "\"usage\"")
+        case .kimi:
+            return contains(data, "\"type\":\"turn.step.completed\"") && contains(data, "\"usage\"")
         }
     }
 
@@ -606,6 +655,11 @@ enum TokenHistoryParser {
         }
     }
 
+    struct KimiRecord: Equatable {
+        let timestampMilliseconds: Double
+        let totalTokens: Int64
+    }
+
     static func codexRecord(from line: Data) -> CodexRecord? {
         guard let object = object(from: line),
               object["type"] as? String == "event_msg",
@@ -665,6 +719,17 @@ enum TokenHistoryParser {
         )
     }
 
+    static func kimiRecord(from line: Data) -> KimiRecord? {
+        guard let object = object(from: line),
+              object["type"] as? String == "turn.step.completed",
+              let timestamp = decimal(object["time"] ?? object["at"]),
+              let usage = object["usage"] as? [String: Any] else { return nil }
+        let total = ["inputOther", "output", "inputCacheRead", "inputCacheCreation"]
+            .reduce(Int64(0)) { $0 + (number(usage[$1]) ?? 0) }
+        guard total > 0 else { return nil }
+        return KimiRecord(timestampMilliseconds: timestamp, totalTokens: total)
+    }
+
     static func date(from value: String) -> Date? {
         let fractional = ISO8601DateFormatter()
         fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -679,16 +744,22 @@ enum TokenHistoryParser {
     private static func number(_ value: Any?) -> Int64? {
         (value as? NSNumber)?.int64Value
     }
+
+    private static func decimal(_ value: Any?) -> Double? {
+        (value as? NSNumber)?.doubleValue
+    }
 }
 
 private enum HistorySource: String, Codable, CaseIterable, Sendable {
     case codex
     case claude
+    case kimi
 
     var displayName: String {
         switch self {
         case .codex: "Codex"
         case .claude: "Claude"
+        case .kimi: "Kimi"
         }
     }
 }
@@ -744,6 +815,7 @@ private struct CachedFileIndex: Codable {
     var subagentBoundaryPassed: Bool
     var codexEvents: [CachedCodexEvent]
     var claudeMessages: [String: CachedClaudeMessage]
+    var kimiEvents: [CachedKimiEvent]
     var skippedRelevantLineCount: Int
 
     static func empty(source: HistorySource, inode: UInt64) -> CachedFileIndex {
@@ -759,6 +831,7 @@ private struct CachedFileIndex: Codable {
             subagentBoundaryPassed: true,
             codexEvents: [],
             claudeMessages: [:],
+            kimiEvents: [],
             skippedRelevantLineCount: 0
         )
     }
@@ -806,4 +879,9 @@ private struct CachedClaudeMessage: Codable {
             outputTokens: max(outputTokens, other.outputTokens)
         )
     }
+}
+
+private struct CachedKimiEvent: Codable {
+    let timestampMilliseconds: Double
+    let tokens: Int64
 }

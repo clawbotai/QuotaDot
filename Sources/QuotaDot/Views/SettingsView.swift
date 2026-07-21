@@ -51,7 +51,7 @@ struct SettingsView: View {
             }
 
             Section(language.text("settings.data")) {
-                LabeledContent(language.text("settings.quotaSource"), value: "Codex + Claude Direct")
+                LabeledContent(language.text("settings.quotaSource"), value: "Codex + Claude + Kimi Direct")
                 LabeledContent(language.text("settings.refreshRate"), value: language.text("settings.refreshRate.value"))
                 Text(language.text("settings.privacy"))
                     .font(.caption)

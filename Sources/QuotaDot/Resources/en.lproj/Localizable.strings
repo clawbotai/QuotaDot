@@ -49,7 +49,7 @@
 "settings.quotaSource" = "Quota source";
 "settings.refreshRate" = "Refresh interval";
 "settings.refreshRate.value" = "60 seconds";
-"settings.privacy" = "Credentials are read locally for official quota endpoints. Token history is calculated from local records using a numeric index that never copies prompts or responses. Coordinates go only to the weather service.";
+"settings.privacy" = "Codex, Claude, and Kimi credentials are read locally for their official quota endpoints. Token history is calculated from local records using a numeric index that never copies prompts or responses. Coordinates go only to the weather service.";
 
 "login.enabled" = "Enabled";
 "login.disabled" = "Disabled";
@@ -76,7 +76,7 @@
 "time.minutes" = "%d minutes";
 
 "history.title" = "Token Usage Details";
-"history.subtitle" = "Local history still available on this Mac from Codex and Claude Code";
+"history.subtitle" = "Local history still available on this Mac from Codex, Claude Code, and Kimi Code";
 "history.total" = "Local history total";
 "history.today" = "Today";
 "history.month" = "This month";
@@ -90,7 +90,7 @@
 "history.loading" = "Calculating local token history";
 "history.loading.detail" = "The first scan reads local history files and may take a little while. A local index makes later scans faster.";
 "history.error.title" = "Token history unavailable";
-"history.error" = "Make sure local Codex or Claude Code history is readable, then try again.";
+"history.error" = "Make sure local Codex, Claude Code, or Kimi Code history is readable, then try again.";
 "history.activity.title" = "Token Activity";
 "history.activity.daily" = "Daily";
 "history.activity.weekly" = "Weekly";
@@ -109,5 +109,5 @@
 "history.estimate.note" = "Estimated from tokens recorded on this Mac during the current quota window and the provider's remaining percentage. Model mix, cache weighting, and usage on other devices can affect the result.";
 "history.estimate.help" = "This Mac recorded %@ tokens in the current quota window; the estimate also uses the provider's remaining percentage.";
 "history.estimate.help.unavailable" = "No usable quota activity, window metadata, or local sample is available yet.";
-"history.source" = "Calculated from Codex and Claude Code history still stored on this Mac (%d files scanned). Deleted or remote-only history cannot be included.";
+"history.source" = "Calculated from Codex, Claude Code, and Kimi Code history still stored on this Mac (%d files scanned). Deleted or remote-only history cannot be included.";
 "history.source.unreadable" = "%d additional files could not be read.";

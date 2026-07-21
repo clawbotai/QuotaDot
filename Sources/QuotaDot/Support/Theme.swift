@@ -51,7 +51,13 @@ extension QuotaHealth {
 }
 
 extension ProviderUsage {
-    var accent: Color { providerId.lowercased() == "claude" ? Color(red: 0.93, green: 0.39, blue: 0.22) : Color(red: 0.20, green: 0.48, blue: 0.96) }
+    var accent: Color {
+        switch providerId.lowercased() {
+        case "claude": Color(red: 0.93, green: 0.39, blue: 0.22)
+        case "kimi": Color(red: 0.46, green: 0.35, blue: 0.94)
+        default: Color(red: 0.20, green: 0.48, blue: 0.96)
+        }
+    }
 
     var softPalette: [Color] {
         let health = QuotaHealth(remaining: [session?.remainingPercent, weekly?.remainingPercent].compactMap { $0 }.min())
@@ -61,9 +67,14 @@ extension ProviderUsage {
         case .critical:
             return [Color(red: 1.00, green: 0.94, blue: 0.92), Color(red: 0.98, green: 0.84, blue: 0.83)]
         default:
-            return providerId.lowercased() == "claude"
-                ? [Color(red: 1.00, green: 0.96, blue: 0.91), Color(red: 0.95, green: 0.91, blue: 0.98)]
-                : [Color(red: 0.92, green: 0.97, blue: 1.00), Color(red: 0.90, green: 0.94, blue: 1.00)]
+            switch providerId.lowercased() {
+            case "claude":
+                return [Color(red: 1.00, green: 0.96, blue: 0.91), Color(red: 0.95, green: 0.91, blue: 0.98)]
+            case "kimi":
+                return [Color(red: 0.95, green: 0.94, blue: 1.00), Color(red: 0.91, green: 0.94, blue: 1.00)]
+            default:
+                return [Color(red: 0.92, green: 0.97, blue: 1.00), Color(red: 0.90, green: 0.94, blue: 1.00)]
+            }
         }
     }
 }
