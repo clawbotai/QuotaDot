@@ -384,9 +384,9 @@ private struct TokenToolLogo: View {
             if let image {
                 Image(nsImage: image)
                     .resizable()
-                    .renderingMode(providerId == "claude" ? .template : .original)
-                    .foregroundStyle(providerId == "claude" ? .orange : .primary)
+                    .renderingMode(.original)
                     .scaledToFit()
+                    .frame(width: opticalSize, height: opticalSize)
             } else if providerId.lowercased() == "kimi" {
                 KimiProviderMark(size: 28)
             } else {
@@ -394,6 +394,10 @@ private struct TokenToolLogo: View {
             }
         }
         .frame(width: 28, height: 28)
+    }
+
+    private var opticalSize: CGFloat {
+        providerId.lowercased() == "kimi" ? 28 * 0.805 : 28
     }
 
     private var image: NSImage? {

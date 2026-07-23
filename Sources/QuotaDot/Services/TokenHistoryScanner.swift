@@ -1,7 +1,7 @@
 import Foundation
 
 enum TokenHistoryScanner {
-    private static let cacheVersion = 6
+    private static let cacheVersion = 7
     private static let readChunkSize = 65_536
     private static let irrelevantLinePrefixLimit = 65_536
     private static let relevantLineHardLimit = 16 * 1_024 * 1_024
@@ -549,7 +549,9 @@ enum TokenHistoryScanner {
             return contains(data, "\"type\":\"assistant\"")
                 || contains(data, "\"role\":\"assistant\"") && contains(data, "\"message\"")
         case .kimi:
-            return contains(data, "\"type\":\"turn.step.completed\"") && contains(data, "\"usage\"")
+            return (contains(data, "\"type\":\"turn.step.completed\"")
+                || contains(data, "\"type\":\"usage.record\""))
+                && contains(data, "\"usage\"")
         }
     }
 
@@ -562,7 +564,9 @@ enum TokenHistoryScanner {
         case .claude:
             return contains(data, "\"type\":\"assistant\"") && contains(data, "\"usage\"")
         case .kimi:
-            return contains(data, "\"type\":\"turn.step.completed\"") && contains(data, "\"usage\"")
+            return (contains(data, "\"type\":\"turn.step.completed\"")
+                || contains(data, "\"type\":\"usage.record\""))
+                && contains(data, "\"usage\"")
         }
     }
 
@@ -721,7 +725,8 @@ enum TokenHistoryParser {
 
     static func kimiRecord(from line: Data) -> KimiRecord? {
         guard let object = object(from: line),
-              object["type"] as? String == "turn.step.completed",
+              let type = object["type"] as? String,
+              type == "turn.step.completed" || type == "usage.record",
               let timestamp = decimal(object["time"] ?? object["at"]),
               let usage = object["usage"] as? [String: Any] else { return nil }
         let total = ["inputOther", "output", "inputCacheRead", "inputCacheCreation"]

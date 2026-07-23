@@ -158,11 +158,9 @@ struct ProviderLogo: View {
             if let image = providerImage {
                 Image(nsImage: image)
                     .resizable()
-                    .renderingMode(provider.providerId.lowercased() == "claude" ? .template : .original)
-                    .foregroundStyle(provider.accent)
+                    .renderingMode(.original)
                     .scaledToFit()
-            } else if provider.providerId.lowercased() == "kimi" {
-                KimiProviderMark(size: size)
+                    .frame(width: opticalSize, height: opticalSize)
             } else {
                 Image(systemName: "sparkles")
                     .resizable()
@@ -174,11 +172,16 @@ struct ProviderLogo: View {
         .clipShape(RoundedRectangle(cornerRadius: size * 0.24, style: .continuous))
     }
 
+    private var opticalSize: CGFloat {
+        provider.providerId.lowercased() == "kimi" ? size * 0.805 : size
+    }
+
     private var providerImage: NSImage? {
         let name: String
         switch provider.providerId.lowercased() {
         case "codex": name = "codex-official"
         case "claude": name = "claude-official"
+        case "kimi": name = "kimi-official"
         default: return nil
         }
         guard let url = QuotaResourceBundle.current.url(forResource: name, withExtension: "png") else { return nil }
@@ -190,17 +193,20 @@ struct KimiProviderMark: View {
     let size: CGFloat
 
     var body: some View {
-        Text("K")
-            .font(.system(size: size * 0.58, weight: .bold, design: .rounded))
-            .foregroundStyle(.white)
+        Image(nsImage: officialImage)
+            .resizable()
+            .renderingMode(.original)
+            .scaledToFit()
+            .frame(width: size * 0.805, height: size * 0.805)
+            .clipShape(RoundedRectangle(cornerRadius: size * 0.805 * 0.24, style: .continuous))
             .frame(width: size, height: size)
-            .background(
-                LinearGradient(
-                    colors: [Color(red: 0.34, green: 0.47, blue: 0.98), Color(red: 0.55, green: 0.31, blue: 0.92)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ),
-                in: RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
-            )
+    }
+
+    private var officialImage: NSImage {
+        guard let url = QuotaResourceBundle.current.url(forResource: "kimi-official", withExtension: "png"),
+              let image = NSImage(contentsOf: url) else {
+            return NSImage()
+        }
+        return image
     }
 }

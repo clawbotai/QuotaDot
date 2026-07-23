@@ -59,16 +59,55 @@ struct TokenHistoryTests {
         #expect(usage["2026-07-17"] == 108)
     }
 
-    @Test func kimiCountsCompletedStepUsageWithoutReadingConversationText() throws {
+    @Test func kimiCountsLegacyAndCurrentUsageRecordsWithoutReadingConversationText() throws {
         let usage = TokenHistoryScanner.kimiDailyUsage(
             from: [
                 kimiEvent(timestamp: "2026-07-17T03:00:00Z", input: 10, cacheCreation: 20, cacheRead: 30, output: 40),
+                kimiEvent(
+                    type: "usage.record",
+                    timestamp: "2026-07-17T03:01:00Z",
+                    input: 1,
+                    cacheCreation: 2,
+                    cacheRead: 3,
+                    output: 4
+                ),
                 data(#"{"type":"assistant.delta","time":1784257201000,"delta":"ignored text"}"#)
             ],
             calendar: utcCalendar
         )
 
-        #expect(usage["2026-07-17"] == 100)
+        #expect(usage["2026-07-17"] == 110)
+    }
+
+    @Test func scanReadsCurrentKimiWireFormatOnceAndSkipsNestedDuplicate() throws {
+        let fixture = try HistoryFixture()
+        defer { fixture.remove() }
+        try writeLines([
+            json([
+                "type": "context.append_loop_event",
+                "time": instant("2026-07-17T03:00:00Z").timeIntervalSince1970 * 1_000,
+                "event": [
+                    "usage": [
+                        "inputOther": 10,
+                        "inputCacheCreation": 20,
+                        "inputCacheRead": 30,
+                        "output": 40
+                    ]
+                ]
+            ]),
+            kimiEvent(
+                type: "usage.record",
+                timestamp: "2026-07-17T03:00:00Z",
+                input: 10,
+                cacheCreation: 20,
+                cacheRead: 30,
+                output: 40
+            )
+        ], to: fixture.kimiSessions.appendingPathComponent("wire.jsonl"))
+
+        let snapshot = try fixture.scan()
+        #expect(snapshot.providers.first { $0.id == "kimi" }?.totalTokens == 100)
+        #expect(snapshot.scannedFileCount == 1)
     }
 
     @Test func scanResumesAnAppendedFileWithoutDoubleCounting() throws {
@@ -592,6 +631,7 @@ struct TokenHistoryTests {
     }
 
     private func kimiEvent(
+        type: String = "turn.step.completed",
         timestamp: String,
         input: Int64,
         cacheCreation: Int64,
@@ -599,7 +639,7 @@ struct TokenHistoryTests {
         output: Int64
     ) -> Data {
         json([
-            "type": "turn.step.completed",
+            "type": type,
             "time": instant(timestamp).timeIntervalSince1970 * 1_000,
             "turnId": 1,
             "step": 1,
@@ -682,6 +722,7 @@ private struct HistoryFixture {
     let codexSessions: URL
     let codexArchive: URL
     let claudeProjects: URL
+    let kimiSessions: URL
     let cache: URL
     let now: Date
 
@@ -690,11 +731,13 @@ private struct HistoryFixture {
         codexSessions = root.appendingPathComponent(".codex/sessions", isDirectory: true)
         codexArchive = root.appendingPathComponent(".codex/archived_sessions", isDirectory: true)
         claudeProjects = root.appendingPathComponent(".claude/projects", isDirectory: true)
+        kimiSessions = root.appendingPathComponent(".kimi-code/sessions", isDirectory: true)
         cache = root.appendingPathComponent("cache/token-history.json")
         now = ISO8601DateFormatter().date(from: "2026-07-17T12:00:00Z")!
         try FileManager.default.createDirectory(at: codexSessions, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: codexArchive, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: claudeProjects, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: kimiSessions, withIntermediateDirectories: true)
     }
 
     func scan() throws -> TokenHistorySnapshot {
