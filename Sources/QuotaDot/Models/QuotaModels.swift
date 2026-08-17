@@ -10,6 +10,47 @@ struct ProviderUsage: Decodable, Identifiable, Sendable {
     let plan: String?
     let lines: [UsageLine]
     let fetchedAt: Date?
+    let balance: ProviderBalance?
+
+    init(
+        providerId: String,
+        displayName: String,
+        plan: String?,
+        lines: [UsageLine],
+        fetchedAt: Date?,
+        balance: ProviderBalance? = nil
+    ) {
+        precondition(balance == nil || lines.isEmpty, "Balance providers cannot contain quota lines")
+        precondition(providerId.lowercased() != "deepseek" || balance != nil, "DeepSeek requires a balance")
+        self.providerId = providerId
+        self.displayName = displayName
+        self.plan = plan
+        self.lines = lines
+        self.fetchedAt = fetchedAt
+        self.balance = balance
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case providerId, displayName, plan, lines, fetchedAt, balance
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        providerId = try container.decode(String.self, forKey: .providerId)
+        displayName = try container.decode(String.self, forKey: .displayName)
+        plan = try container.decodeIfPresent(String.self, forKey: .plan)
+        lines = try container.decodeIfPresent([UsageLine].self, forKey: .lines) ?? []
+        fetchedAt = try container.decodeIfPresent(Date.self, forKey: .fetchedAt)
+        balance = try container.decodeIfPresent(ProviderBalance.self, forKey: .balance)
+        guard balance == nil || lines.isEmpty,
+              providerId.lowercased() != "deepseek" || balance != nil else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .balance,
+                in: container,
+                debugDescription: "Invalid provider metric combination"
+            )
+        }
+    }
 
     var id: String { providerId }
     private var rawSession: UsageLine? { progress(named: ["session", "5h", "five hour"]) }
@@ -42,6 +83,12 @@ struct ProviderUsage: Decodable, Identifiable, Sendable {
         lines.first { $0.type == "progress" && names.contains($0.label.lowercased()) }
     }
 
+}
+
+struct ProviderBalance: Decodable, Sendable, Equatable {
+    let currency: String
+    let toppedUp: Decimal
+    let isAvailable: Bool
 }
 
 struct UsageLine: Decodable, Identifiable, Sendable {

@@ -4,7 +4,7 @@
 
 <h1 align="center">QuotaDot</h1>
 
-<p align="center">A quiet, native quota companion for Codex, Claude, and Kimi on macOS.</p>
+<p align="center">A quiet, native quota and balance companion for Codex, Claude, Kimi, and DeepSeek on macOS.</p>
 
 <p align="center">
   <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-111827">
@@ -12,14 +12,15 @@
   <img alt="MIT License" src="https://img.shields.io/badge/License-MIT-2563EB">
 </p>
 
-QuotaDot is a native macOS menu bar and floating quota companion for Codex, Claude, and Kimi. It reads locally authenticated sessions and presents remaining quota, reset times, and current activity in a restrained Liquid Glass interface.
+QuotaDot is a native macOS menu bar and floating companion for Codex, Claude, Kimi, and the optional DeepSeek API. It reads locally authenticated sessions, presents remaining quota, reset times, and current activity, and can show a DeepSeek CNY top-up balance in a restrained Liquid Glass interface.
 
 ## Features
 
-- Shows Codex, Claude, and Kimi together or independently; providers that are not signed in do not reserve space.
+- Shows Codex, Claude, Kimi, and the optional DeepSeek API together or independently; unavailable providers do not reserve space.
+- Displays the DeepSeek CNY top-up balance without treating money as a percentage quota or changing Codex/Claude/Kimi health indicators.
 - Detects the quota windows currently returned by each service. A temporarily unavailable five-hour window is hidden automatically and reappears when the service restores it.
 - Displays reset times, available Codex quota resets, and the expiration time of each reset opportunity when the service provides that data.
-- Detects local Codex and Claude activity and highlights only the provider currently in use.
+- Detects local Codex, Claude, and Kimi activity and highlights only the provider currently in use.
 - Collapses into separate provider badges when the pointer leaves and expands into a unified detail panel on hover.
 - Adapts the background to quota health and current local weather.
 - Colors each quota ring independently: blue above 50%, amber from 10% through 50%, and coral at 10% or below.
@@ -39,6 +40,10 @@ Public builds must be signed with a Developer ID Application certificate and not
 
 No unsigned build is published as an end-user release. Files containing `UNSIGNED` in their name are local development artifacts and must not be redistributed. See the [installation guide](docs/INSTALL.md) for details.
 
+### Optional DeepSeek balance
+
+In Settings, choose **Get API Key** to open DeepSeek's official API-key page, paste the newly created key into the secure field, and choose **Connect**. QuotaDot validates it against the official balance endpoint before storing it in macOS Keychain. A rejected key is never saved; disconnecting or receiving 401/403 removes the saved credential. See [INSTALL.md](docs/INSTALL.md#optional-deepseek-api-balance).
+
 ## Privacy
 
 QuotaDot does not operate an account or quota relay server:
@@ -46,7 +51,8 @@ QuotaDot does not operate an account or quota relay server:
 - Codex credentials are loaded read-only from the local `CODEX_HOME/auth.json` file, which defaults to `~/.codex/auth.json`.
 - Claude credentials are read from Claude Code's local secure storage and are written back only when the official token refresh flow requires it.
 - Kimi credentials are loaded read-only from `KIMI_CODE_HOME/credentials/kimi-code.json`, which defaults to `~/.kimi-code/credentials/kimi-code.json`.
-- Quota requests are sent directly to the corresponding provider endpoints.
+- DeepSeek is optional. A pasted API key is validated first and then stored in macOS Keychain with device-only accessibility; it is removed when the user disconnects or DeepSeek rejects it as unauthorized.
+- Quota and balance requests are sent directly to the corresponding official provider endpoints. The DeepSeek key is sent only to `https://api.deepseek.com/user/balance`, and redirects are rejected.
 - Token-history totals are calculated locally from Codex, Claude Code, and Kimi Code JSONL history still present on the Mac. QuotaDot stores only local indexing metadata—source file paths, cursors, session/message identifiers, timestamps—and numeric token counts in Application Support; prompts and responses are not copied into it.
 - Location coordinates are used only to request local weather. They are not combined with quota credentials or written to project logs.
 
@@ -77,7 +83,7 @@ Maintainers can find the signing, notarization, and DMG workflow in the [release
 Sources/QuotaDot/
   App/        Application lifecycle and menu bar entry point
   Models/     Quota and weather data models
-  Services/   Codex, Claude, Kimi, location, weather, and login-item clients
+  Services/   Codex, Claude, Kimi, DeepSeek, location, weather, and login-item clients
   Stores/     Refresh, merge, and activity state
   Views/      Liquid Glass floating interface and Settings
 script/       Build, icon generation, signing, and release scripts

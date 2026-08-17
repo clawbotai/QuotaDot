@@ -44,6 +44,9 @@ struct ProviderCard: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
+        .frame(height: resetCredits == nil
+            ? QuotaWindowMetrics.quotaCardHeight
+            : QuotaWindowMetrics.quotaCardWithCreditsHeight)
     }
 
     private var activityLabel: some View {
@@ -182,6 +185,7 @@ struct ProviderLogo: View {
         case "codex": name = "codex-official"
         case "claude": name = "claude-official"
         case "kimi": name = "kimi-official"
+        case "deepseek": name = "deepseek-official"
         default: return nil
         }
         guard let url = QuotaResourceBundle.current.url(forResource: name, withExtension: "png") else { return nil }

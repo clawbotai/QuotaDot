@@ -11,6 +11,7 @@ struct QuotaModelsTests {
         let result = try decoder.decode([ProviderUsage].self, from: json)
         #expect(result[0].session?.remainingPercent == 0.83)
         #expect(result[0].session?.resetsAt != nil)
+        #expect(result[0].balance == nil)
     }
 
     @Test func healthThresholds() {

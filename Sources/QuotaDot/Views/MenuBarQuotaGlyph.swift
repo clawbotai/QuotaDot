@@ -1,6 +1,31 @@
 import AppKit
 import SwiftUI
 
+struct DeepSeekMenuBarGlyph: View {
+    var body: some View {
+        Group {
+            if let image = Self.templateImage {
+                Image(nsImage: image)
+                    .resizable()
+                    .renderingMode(.template)
+            } else {
+                Image(systemName: "sparkles")
+                    .resizable()
+            }
+        }
+        .scaledToFit()
+        .frame(width: 16, height: 16)
+        .accessibilityHidden(true)
+    }
+
+    private static let templateImage: NSImage? = {
+        guard let url = QuotaResourceBundle.current.url(forResource: "deepseek-official", withExtension: "png"),
+              let image = NSImage(contentsOf: url) else { return nil }
+        image.isTemplate = true
+        return image
+    }()
+}
+
 struct MenuBarQuotaGlyph: View {
     var body: some View {
         Image(nsImage: Self.templateImage)

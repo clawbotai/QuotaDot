@@ -11,6 +11,7 @@ struct FloatingQuotaView: View {
 
     private var compactView: some View {
         Group {
+#if compiler(>=6.2)
             if #available(macOS 26.0, *) {
                 GlassEffectContainer(spacing: 0) {
                     compactBadges
@@ -18,6 +19,9 @@ struct FloatingQuotaView: View {
             } else {
                 compactBadges
             }
+#else
+            compactBadges
+#endif
         }
         .frame(width: compactWidth, height: 56)
         .contentShape(Rectangle())
@@ -32,7 +36,9 @@ struct FloatingQuotaView: View {
                 CompactProviderBadge(
                     provider: provider,
                     remaining: providerLowest(provider),
-                    active: activeProviderIds.contains(provider.id)
+                    active: provider.balance == nil && activeProviderIds.contains(provider.id),
+                    status: provider.providerId.lowercased() == "deepseek" ? store.deepSeekStatus : .idle,
+                    language: language
                 )
             }
         }
@@ -51,15 +57,24 @@ struct FloatingQuotaView: View {
                     ForEach(Array(store.providers.enumerated()), id: \.element.id) { index, provider in
                         if index > 0 {
                             Divider()
+                                .frame(height: QuotaWindowMetrics.dividerHeight)
                                 .padding(.horizontal, 20)
                                 .opacity(0.30)
                         }
-                        ProviderCard(
-                            provider: provider,
-                            isConsuming: activeProviderIds.contains(provider.id),
-                            resetCredits: provider.providerId.lowercased() == "codex" ? store.codexResetCredits : nil,
-                            language: language
-                        )
+                        if provider.balance != nil {
+                            BalanceProviderCard(
+                                provider: provider,
+                                status: store.deepSeekStatus,
+                                language: language
+                            )
+                        } else {
+                            ProviderCard(
+                                provider: provider,
+                                isConsuming: activeProviderIds.contains(provider.id),
+                                resetCredits: provider.providerId.lowercased() == "codex" ? store.codexResetCredits : nil,
+                                language: language
+                            )
+                        }
                     }
                 }
                 footer
@@ -119,9 +134,11 @@ struct FloatingQuotaView: View {
                 .foregroundStyle(.secondary)
             }
             Spacer()
-            Text(QuotaFormatters.percent(store.lowestRemaining))
-                .font(.system(size: 20, weight: .semibold, design: .rounded))
-                .monospacedDigit()
+            if store.hasQuotaProviders {
+                Text(QuotaFormatters.percent(store.lowestRemaining))
+                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+            }
             Button { compact = true } label: {
                 Image(systemName: "chevron.down")
                     .font(.system(size: 10, weight: .bold))
@@ -160,13 +177,20 @@ struct FloatingQuotaView: View {
     }
 
     private var statusCopy: String {
-        if store.errorMessageKey != nil { return language.text("status.cached") }
-        return switch store.health {
-        case .healthy: language.text("status.healthy")
-        case .warning: language.text("status.warning")
-        case .critical: language.text("status.critical")
-        case .unknown: language.text("status.connecting")
+        if store.hasQuotaProviders {
+            if store.errorMessageKey != nil { return language.text("status.cached") }
+            return switch store.health {
+            case .healthy: language.text("status.healthy")
+            case .warning: language.text("status.warning")
+            case .critical: language.text("status.critical")
+            case .unknown: language.text("status.connecting")
+            }
         }
+        if store.deepSeekProvider != nil {
+            if case .cached = store.deepSeekStatus { return language.text("status.cached") }
+            return language.text("balance.connected")
+        }
+        return language.text("status.connecting")
     }
 
     private func weatherSummary(_ weather: WeatherSnapshot) -> String {
@@ -179,7 +203,7 @@ struct FloatingQuotaView: View {
         "\(weather.displayLocation(language: language.language)) · \(weather.condition(language: language)) · \(weather.temperature)°"
     }
 
-    private var compactWidth: CGFloat { CGFloat(max(store.providers.count, 1)) * 52 + CGFloat(max(store.providers.count - 1, 0)) * 8 }
+    private var compactWidth: CGFloat { QuotaWindowMetrics.compactWidth(providerCount: store.providers.count) }
     private func providerLowest(_ provider: ProviderUsage) -> Double? { [provider.session?.remainingPercent, provider.weekly?.remainingPercent].compactMap { $0 }.min() }
 }
 
@@ -187,6 +211,8 @@ private struct CompactProviderBadge: View {
     let provider: ProviderUsage
     let remaining: Double?
     let active: Bool
+    let status: DeepSeekRefreshStatus
+    let language: LanguageSettings
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var health: QuotaHealth { QuotaHealth(remaining: remaining) }
@@ -208,7 +234,7 @@ private struct CompactProviderBadge: View {
         // Keep every animated pixel inside the badge's continuous corner.
         .clipShape(shape)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(provider.displayName) \(QuotaFormatters.percent(remaining)) \(active ? "active" : "idle")")
+        .accessibilityLabel(accessibilityCopy)
     }
 
     private var badgeSurface: some View {
@@ -217,7 +243,7 @@ private struct CompactProviderBadge: View {
             innerShape
                 .fill(
                     LinearGradient(
-                        colors: health.backgroundColors.map { $0.opacity(0.30) },
+                        colors: badgeColors.map { $0.opacity(0.30) },
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -233,9 +259,11 @@ private struct CompactProviderBadge: View {
 
             VStack(spacing: 3) {
                 ProviderLogo(provider: provider, size: 20)
-                Text(QuotaFormatters.percent(remaining))
+                Text(compactMetric)
                     .font(.system(size: 9.5, weight: .semibold, design: .rounded))
                     .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
             }
             .padding(.top, 1)
         }
@@ -251,6 +279,32 @@ private struct CompactProviderBadge: View {
                     lineWidth: 0.7
                 )
         }
+        .overlay(alignment: .topTrailing) {
+            if let balance = provider.balance {
+                Circle()
+                    .fill(balance.isAvailable ? provider.accent : Color.red)
+                    .frame(width: 5, height: 5)
+                    .padding(7)
+            }
+        }
+    }
+
+    private var badgeColors: [Color] {
+        provider.balance == nil ? health.backgroundColors : provider.softPalette
+    }
+
+    private var compactMetric: String {
+        if let balance = provider.balance { return QuotaFormatters.compactCNY(balance.toppedUp) }
+        return QuotaFormatters.percent(remaining)
+    }
+
+    private var accessibilityCopy: String {
+        if let balance = provider.balance {
+            let availability = language.text(balance.isAvailable ? "balance.available" : "balance.insufficient")
+            let freshness = if case .cached = status { language.text("balance.cached") } else { "" }
+            return "\(provider.displayName) \(QuotaFormatters.cny(balance.toppedUp)) \(availability) \(freshness)"
+        }
+        return "\(provider.displayName) \(QuotaFormatters.percent(remaining)) \(active ? language.text("provider.active") : language.text("provider.idle"))"
     }
 
     @ViewBuilder

@@ -49,7 +49,7 @@
 "settings.quotaSource" = "额度来源";
 "settings.refreshRate" = "刷新频率";
 "settings.refreshRate.value" = "60 秒";
-"settings.privacy" = "Codex、Claude 与 Kimi 账号凭据只从本机读取并直接用于各自官方额度接口；Token 历史仅从本机记录计算并保存数值索引，不复制提示词或回复；位置坐标仅发送给天气服务。";
+"settings.privacy" = "Codex、Claude 与 Kimi 凭据只用于各自官方接口；DeepSeek API Key 经验证后保存在 macOS 钥匙串；Token 历史仅从本机记录计算；位置坐标仅发送给天气服务。";
 
 "login.enabled" = "已启用";
 "login.disabled" = "未启用";
@@ -111,3 +111,36 @@
 "history.estimate.help.unavailable" = "额度尚未开始消耗、窗口信息缺失或本机样本不足，暂无法估算。";
 "history.source" = "基于本机仍保留的 Codex / Claude Code / Kimi Code 历史文件统计（已扫描 %d 个文件）。已删除或不在本机的记录无法计入。";
 "history.source.unreadable" = "另有 %d 个文件暂时无法读取。";
+"balance.topUp" = "充值余额";
+"balance.available" = "可用";
+"balance.insufficient" = "余额不足";
+"balance.connected" = "余额已连接";
+"balance.cached" = "数据暂存";
+"balance.updatedAt" = "%@ 更新";
+"balance.cachedAt" = "数据暂存 · %@ 更新";
+"balance.cachedContractAt" = "数据暂存 · 契约异常 · %@ 更新";
+
+"deepseek.settings.section" = "DeepSeek API";
+"deepseek.settings.status" = "状态";
+"deepseek.settings.apiKey" = "粘贴 DeepSeek API Key";
+"deepseek.settings.getKey" = "获取 API Key";
+"deepseek.settings.connect" = "连接";
+"deepseek.settings.retry" = "重新验证";
+"deepseek.settings.disconnect" = "断开连接";
+"deepseek.settings.privacy" = "API Key 先通过 DeepSeek 官方余额接口验证，成功后才保存到此 Mac 的钥匙串；QuotaDot 不会把 Key 写入偏好设置或日志。";
+"deepseek.settings.invalidKey" = "请输入有效的 DeepSeek API Key。";
+"deepseek.settings.keychainFailed" = "无法访问 macOS 钥匙串，请稍后重试。";
+"deepseek.status.notConnected" = "未连接";
+"deepseek.status.idle" = "等待验证";
+"deepseek.status.checking" = "正在验证 API Key 并读取余额";
+"deepseek.status.live" = "已连接，余额已读取";
+"deepseek.status.cached" = "正在显示最近一次成功数据";
+"deepseek.status.cachedContract" = "数据暂存：%@；%@ 到期；当前：%@";
+"deepseek.status.invalidKey" = "API Key 格式无效";
+"deepseek.status.keychainFailed" = "无法安全保存或读取 API Key";
+"deepseek.status.expired" = "连接已失效，请重新粘贴 API Key";
+"deepseek.status.unauthorized" = "请求被 DeepSeek 拒绝";
+"deepseek.status.cnyMissing" = "未返回 CNY 充值余额";
+"deepseek.status.rateLimited" = "DeepSeek 暂时限制请求";
+"deepseek.status.network" = "暂时无法连接 DeepSeek";
+"deepseek.status.contract" = "DeepSeek 余额响应暂不可用";

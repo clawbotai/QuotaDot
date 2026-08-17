@@ -55,6 +55,7 @@ extension ProviderUsage {
         switch providerId.lowercased() {
         case "claude": Color(red: 0.93, green: 0.39, blue: 0.22)
         case "kimi": Color(red: 0.46, green: 0.35, blue: 0.94)
+        case "deepseek": Color(red: 0.20, green: 0.43, blue: 0.92)
         default: Color(red: 0.20, green: 0.48, blue: 0.96)
         }
     }
@@ -67,13 +68,15 @@ extension ProviderUsage {
         case .critical:
             return [Color(red: 1.00, green: 0.94, blue: 0.92), Color(red: 0.98, green: 0.84, blue: 0.83)]
         default:
-            switch providerId.lowercased() {
+            return switch providerId.lowercased() {
             case "claude":
-                return [Color(red: 1.00, green: 0.96, blue: 0.91), Color(red: 0.95, green: 0.91, blue: 0.98)]
+                [Color(red: 1.00, green: 0.96, blue: 0.91), Color(red: 0.95, green: 0.91, blue: 0.98)]
             case "kimi":
-                return [Color(red: 0.95, green: 0.94, blue: 1.00), Color(red: 0.91, green: 0.94, blue: 1.00)]
+                [Color(red: 0.95, green: 0.94, blue: 1.00), Color(red: 0.91, green: 0.94, blue: 1.00)]
+            case "deepseek":
+                [Color(red: 0.91, green: 0.96, blue: 1.00), Color(red: 0.88, green: 0.93, blue: 1.00)]
             default:
-                return [Color(red: 0.92, green: 0.97, blue: 1.00), Color(red: 0.90, green: 0.94, blue: 1.00)]
+                [Color(red: 0.92, green: 0.97, blue: 1.00), Color(red: 0.90, green: 0.94, blue: 1.00)]
             }
         }
     }
@@ -117,25 +120,34 @@ extension WeatherMood {
 extension View {
     @ViewBuilder
     func quotaLiquidGlass(cornerRadius: CGFloat) -> some View {
+#if compiler(>=6.2)
         if #available(macOS 26.0, *) {
             self.glassEffect(.clear.interactive(), in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         } else {
             self.background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         }
+#else
+        self.background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+#endif
     }
 
     @ViewBuilder
     func quotaCompactGlass(cornerRadius: CGFloat) -> some View {
+#if compiler(>=6.2)
         if #available(macOS 26.0, *) {
             self.glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         } else {
             self.background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         }
+#else
+        self.background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+#endif
     }
 
     @ViewBuilder
     func quotaContentGlass(cornerRadius: CGFloat) -> some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+#if compiler(>=6.2)
         if #available(macOS 26.0, *) {
             self.glassEffect(.regular, in: shape)
         } else {
@@ -145,5 +157,12 @@ extension View {
                     shape.strokeBorder(.primary.opacity(0.07), lineWidth: 0.75)
                 }
         }
+#else
+        self
+            .background(.ultraThinMaterial, in: shape)
+            .overlay {
+                shape.strokeBorder(.primary.opacity(0.07), lineWidth: 0.75)
+            }
+#endif
     }
 }

@@ -1,6 +1,39 @@
 import AppKit
 import SwiftUI
 
+enum QuotaWindowMetrics {
+    static let width: CGFloat = 356
+    static let headerHeight: CGFloat = 62
+    static let footerHeight: CGFloat = 34
+    static let quotaCardHeight: CGFloat = 174
+    static let quotaCardWithCreditsHeight: CGFloat = 202
+    static let balanceCardHeight: CGFloat = 132
+    static let emptyStateHeight: CGFloat = 170
+    static let dividerHeight: CGFloat = 1
+    static let compactBadgeSize: CGFloat = 52
+    static let compactSpacing: CGFloat = 8
+    static let compactHeight: CGFloat = 56
+
+    static func expandedHeight(providers: [ProviderUsage], hasCodexCredits: Bool) -> CGFloat {
+        let content: CGFloat
+        if providers.isEmpty {
+            content = emptyStateHeight
+        } else {
+            content = providers.reduce(0) { total, provider in
+                if provider.balance != nil { return total + balanceCardHeight }
+                let hasCredits = hasCodexCredits && provider.providerId.lowercased() == "codex"
+                return total + (hasCredits ? quotaCardWithCreditsHeight : quotaCardHeight)
+            } + CGFloat(max(providers.count - 1, 0)) * dividerHeight
+        }
+        return headerHeight + content + footerHeight
+    }
+
+    static func compactWidth(providerCount: Int) -> CGFloat {
+        let count = max(providerCount, 1)
+        return CGFloat(count) * compactBadgeSize + CGFloat(max(count - 1, 0)) * compactSpacing
+    }
+}
+
 @MainActor
 final class FloatingWindowController: NSObject {
     private let store: QuotaStore
@@ -44,6 +77,7 @@ final class FloatingWindowController: NSObject {
 
     func expandAndShow() {
         setCompact(false)
+        if let panel { synchronizePanelSize(panel) }
         panel?.orderFrontRegardless()
     }
 
@@ -58,7 +92,7 @@ final class FloatingWindowController: NSObject {
         guard compact != value, let panel else { return }
         compact = value
         let oldTopRight = NSPoint(x: panel.frame.maxX, y: panel.frame.maxY)
-        let size = value ? compactSize : NSSize(width: 356, height: expandedHeight)
+        let size = value ? compactSize : NSSize(width: QuotaWindowMetrics.width, height: expandedHeight)
         let target = NSRect(x: oldTopRight.x - size.width, y: oldTopRight.y - size.height, width: size.width, height: size.height)
         panel.setFrame(target, display: false)
         panel.contentView = makeHostingView(compact: value)
@@ -76,12 +110,17 @@ final class FloatingWindowController: NSObject {
     }
 
     private var expandedHeight: CGFloat {
-        96 + CGFloat(max(store.providers.count, 1)) * 174 + (store.codexResetCredits == nil ? 0 : 28)
+        QuotaWindowMetrics.expandedHeight(
+            providers: store.providers,
+            hasCodexCredits: store.codexResetCredits != nil
+        )
     }
 
     private var compactSize: NSSize {
-        let count = max(store.providers.count, 1)
-        return NSSize(width: CGFloat(count * 52 + max(count - 1, 0) * 8), height: 56)
+        NSSize(
+            width: QuotaWindowMetrics.compactWidth(providerCount: store.providers.count),
+            height: QuotaWindowMetrics.compactHeight
+        )
     }
 
     private func position(_ panel: NSPanel, size: NSSize) {
@@ -101,7 +140,7 @@ final class FloatingWindowController: NSObject {
 
     private func evaluatePointer() {
         guard let panel else { return }
-        if compact { synchronizeCompactSize(panel) }
+        synchronizePanelSize(panel)
         let inside = panel.frame.insetBy(dx: -8, dy: -8).contains(NSEvent.mouseLocation)
         if inside && compact {
             setCompact(false)
@@ -110,8 +149,10 @@ final class FloatingWindowController: NSObject {
         }
     }
 
-    private func synchronizeCompactSize(_ panel: NSPanel) {
-        let size = compactSize
+    private func synchronizePanelSize(_ panel: NSPanel) {
+        let size = compact
+            ? compactSize
+            : NSSize(width: QuotaWindowMetrics.width, height: expandedHeight)
         guard abs(panel.frame.width - size.width) > 0.5 || abs(panel.frame.height - size.height) > 0.5 else { return }
         let topRight = NSPoint(x: panel.frame.maxX, y: panel.frame.maxY)
         panel.setFrame(

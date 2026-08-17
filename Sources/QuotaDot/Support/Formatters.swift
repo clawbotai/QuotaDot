@@ -54,6 +54,38 @@ enum QuotaFormatters {
         return String(format: "%.*f%@", digits, value, suffix)
     }
 
+    static func cny(_ amount: Decimal) -> String {
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.numberStyle = .currency
+        formatter.currencyCode = "CNY"
+        formatter.currencySymbol = "¥"
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
+        return formatter.string(from: NSDecimalNumber(decimal: amount)) ?? "¥--"
+    }
+
+    static func compactCNY(_ amount: Decimal) -> String {
+        let billion = Decimal(1_000_000_000)
+        let million = Decimal(1_000_000)
+        let thousand = Decimal(1_000)
+        if amount > Decimal(string: "999900000000")! { return "¥999B+" }
+        if amount >= billion { return compact(amount / billion, suffix: "B") }
+        if amount >= Decimal(999_950_000) { return compact(amount / billion, suffix: "B") }
+        if amount >= million { return compact(amount / million, suffix: "M") }
+        if amount >= Decimal(999_950) { return compact(amount / million, suffix: "M") }
+        if amount >= thousand { return compact(amount / thousand, suffix: "k") }
+        return cny(amount).replacingOccurrences(of: ",", with: "")
+    }
+
+    private static func compact(_ amount: Decimal, suffix: String) -> String {
+        var input = amount
+        var rounded = Decimal()
+        NSDecimalRound(&rounded, &input, 1, .plain)
+        let number = NSDecimalNumber(decimal: rounded).stringValue
+        return "¥\(number)\(suffix)"
+    }
+
     @MainActor static func relativeReset(from date: Date, language: LanguageSettings, now: Date = .now) -> String {
         let seconds = max(date.timeIntervalSince(now), 0)
         let hours = Int(seconds) / 3600

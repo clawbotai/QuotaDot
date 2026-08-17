@@ -3,7 +3,7 @@
 ## System Requirements
 
 - macOS 14 Sonoma or later.
-- At least one signed-in provider: Codex or Claude Code.
+- At least one available provider: signed-in Codex, Claude Code, or Kimi Code; alternatively, connect a DeepSeek API key after launch.
 
 ## Recommended Installation
 
@@ -23,7 +23,21 @@ If no signed and notarized DMG is listed on the Releases page, a public end-user
 - **Weather background:** Allow location access when macOS asks for permission. Quota features continue to work if permission is denied.
 - **Launch at login:** Open the QuotaDot menu bar menu, choose Settings, and enable Launch at Login. If macOS requests approval, follow the prompt to System Settings → General → Login Items.
 - **Language:** Click `EN` or `ZH` in the expanded status row, or select a display language in Settings. No restart is required.
-- **No quota data:** Confirm that Codex or Claude Code is signed in for the current macOS user, then choose Refresh Now.
+- **No quota data:** Confirm that Codex, Claude Code, or Kimi Code is signed in for the current macOS user, then choose Refresh Now.
+
+## Optional DeepSeek API Balance
+
+QuotaDot can display the CNY top-up balance returned by DeepSeek's official `/user/balance` API.
+
+1. Open QuotaDot Settings → **DeepSeek API**.
+2. Choose **Get API Key**. QuotaDot opens `https://platform.deepseek.com/api_keys` in your default browser.
+3. Create and copy a DeepSeek API key. Do not use a website login token or another provider's key.
+4. Paste the key into QuotaDot's secure field and choose **Connect**.
+5. QuotaDot first validates the key against the official balance endpoint. Only a successful key is stored in macOS Keychain.
+
+The key is never written to UserDefaults, shell configuration, LaunchAgent files, or application logs. Normal Finder launch and **Launch at Login** work without additional environment setup.
+
+If DeepSeek returns 401/403, QuotaDot deletes the saved credential, removes the old balance, and asks you to reconnect. Choose **Disconnect** at any time to delete the Keychain item yourself. Revoking the key on DeepSeek's website is also recommended if the key may have been exposed.
 
 ## Uninstall
 

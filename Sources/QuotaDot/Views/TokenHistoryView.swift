@@ -87,6 +87,7 @@ struct TokenHistoryView: View {
 
     private var summary: some View {
         Group {
+#if compiler(>=6.2)
             if #available(macOS 26.0, *) {
                 GlassEffectContainer(spacing: 14) {
                     summaryMetrics
@@ -94,6 +95,9 @@ struct TokenHistoryView: View {
             } else {
                 summaryMetrics
             }
+#else
+            summaryMetrics
+#endif
         }
         .help("\(QuotaFormatters.tokenCount(store.snapshot.totalTokens, language: language.language, compact: false)) Token")
     }

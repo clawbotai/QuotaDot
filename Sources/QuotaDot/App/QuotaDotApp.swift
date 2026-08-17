@@ -13,12 +13,20 @@ struct QuotaDotApp: App {
                 language: appDelegate.language
             )
         } label: {
-            HStack(spacing: 3) {
-                MenuBarQuotaGlyph()
-                Text(QuotaFormatters.percent(appDelegate.store.lowestRemaining))
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .monospacedDigit()
+            HStack(spacing: 4) {
+                if appDelegate.store.hasQuotaProviders {
+                    MenuBarQuotaGlyph()
+                    Text(QuotaFormatters.percent(appDelegate.store.lowestRemaining))
+                } else if let balance = appDelegate.store.deepSeekProvider?.balance {
+                    DeepSeekMenuBarGlyph()
+                    Text(QuotaFormatters.compactCNY(balance.toppedUp))
+                } else {
+                    MenuBarQuotaGlyph()
+                    Text("--")
+                }
             }
+            .font(.system(size: 12, weight: .medium, design: .rounded))
+            .monospacedDigit()
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(menuBarAccessibilityText)
             .help(menuBarAccessibilityText)
@@ -38,7 +46,13 @@ struct QuotaDotApp: App {
         .defaultSize(width: 940, height: 690)
         .windowResizability(.contentMinSize)
 
-        Settings { SettingsView(language: appDelegate.language) }
+        Settings {
+            SettingsView(
+                language: appDelegate.language,
+                store: appDelegate.store,
+                deepSeekCredentials: appDelegate.deepSeekCredentials
+            )
+        }
     }
 
     private var menuBarAccessibilityText: String {
@@ -71,7 +85,8 @@ private struct TokenHistoryCommands: Commands {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    let store = QuotaStore()
+    let deepSeekCredentials = DeepSeekCredentialManager()
+    lazy var store = QuotaStore(deepSeekCredentials: deepSeekCredentials)
     let historyStore = TokenHistoryStore()
     let language = LanguageSettings()
     lazy var windowController = FloatingWindowController(store: store, language: language)
@@ -121,6 +136,10 @@ private struct MenuBarContent: View {
 
     private func menuSummary(for provider: ProviderUsage) -> String {
         var parts = [provider.displayName]
+        if let balance = provider.balance {
+            parts.append("\(language.text("balance.topUp")) \(QuotaFormatters.cny(balance.toppedUp))")
+            if case .cached = store.deepSeekStatus { parts.append(language.text("balance.cached")) }
+        }
         if let session = provider.session { parts.append("5h \(QuotaFormatters.percent(session.remainingPercent))") }
         if let weekly = provider.weekly {
             parts.append("\(language.text("menu.weekly.short")) \(QuotaFormatters.percent(weekly.remainingPercent))")

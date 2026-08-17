@@ -49,7 +49,7 @@
 "settings.quotaSource" = "Quota source";
 "settings.refreshRate" = "Refresh interval";
 "settings.refreshRate.value" = "60 seconds";
-"settings.privacy" = "Codex, Claude, and Kimi credentials are read locally for their official quota endpoints. Token history is calculated from local records using a numeric index that never copies prompts or responses. Coordinates go only to the weather service.";
+"settings.privacy" = "Codex, Claude, and Kimi credentials are used only with their official endpoints. A validated DeepSeek API key is stored in macOS Keychain. Token history is calculated locally. Coordinates go only to the weather service.";
 
 "login.enabled" = "Enabled";
 "login.disabled" = "Disabled";
@@ -111,3 +111,36 @@
 "history.estimate.help.unavailable" = "No usable quota activity, window metadata, or local sample is available yet.";
 "history.source" = "Calculated from Codex, Claude Code, and Kimi Code history still stored on this Mac (%d files scanned). Deleted or remote-only history cannot be included.";
 "history.source.unreadable" = "%d additional files could not be read.";
+"balance.topUp" = "Top-up balance";
+"balance.available" = "Available";
+"balance.insufficient" = "Insufficient balance";
+"balance.connected" = "Balance connected";
+"balance.cached" = "Cached data";
+"balance.updatedAt" = "Updated %@";
+"balance.cachedAt" = "Cached data · updated %@";
+"balance.cachedContractAt" = "Cached data · contract issue · updated %@";
+
+"deepseek.settings.section" = "DeepSeek API";
+"deepseek.settings.status" = "Status";
+"deepseek.settings.apiKey" = "Paste DeepSeek API key";
+"deepseek.settings.getKey" = "Get API Key";
+"deepseek.settings.connect" = "Connect";
+"deepseek.settings.retry" = "Verify again";
+"deepseek.settings.disconnect" = "Disconnect";
+"deepseek.settings.privacy" = "The API key is verified with DeepSeek's official balance endpoint before it is stored in this Mac's Keychain. QuotaDot never writes it to preferences or logs.";
+"deepseek.settings.invalidKey" = "Enter a valid DeepSeek API key.";
+"deepseek.settings.keychainFailed" = "macOS Keychain is unavailable. Try again.";
+"deepseek.status.notConnected" = "Not connected";
+"deepseek.status.idle" = "Waiting to verify";
+"deepseek.status.checking" = "Verifying API key and reading balance";
+"deepseek.status.live" = "Connected and balance loaded";
+"deepseek.status.cached" = "Showing the most recent successful data";
+"deepseek.status.cachedContract" = "Cached: %@; expires %@; current: %@";
+"deepseek.status.invalidKey" = "API key format is invalid";
+"deepseek.status.keychainFailed" = "Unable to securely save or read the API key";
+"deepseek.status.expired" = "Connection expired; paste the API key again";
+"deepseek.status.unauthorized" = "DeepSeek rejected the request";
+"deepseek.status.cnyMissing" = "No CNY top-up balance returned";
+"deepseek.status.rateLimited" = "DeepSeek is temporarily rate limiting requests";
+"deepseek.status.network" = "DeepSeek is temporarily unavailable";
+"deepseek.status.contract" = "DeepSeek balance response is unavailable";
