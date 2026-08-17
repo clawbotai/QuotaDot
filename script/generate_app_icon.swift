@@ -71,85 +71,33 @@ private func makeIcon(size: Int) -> NSBitmapImageRep {
     context.setAllowsAntialiasing(true)
     context.clear(CGRect(x: 0, y: 0, width: canvasSize, height: canvasSize))
 
-    let tile = CGRect(x: 58, y: 58, width: 908, height: 908)
-    let tilePath = roundedRect(tile, radius: 224)
+    let tile = CGRect(x: 56, y: 56, width: 912, height: 912)
+    let tilePath = roundedRect(tile, radius: 222)
 
-    context.saveGState()
-    context.setShadow(offset: CGSize(width: 0, height: -26), blur: 46, color: color(0x08111F, alpha: 0.34))
     context.addPath(tilePath)
-    context.setFillColor(color(0x0C1526))
+    context.setFillColor(color(0x090A0C))
     context.fillPath()
-    context.restoreGState()
-
-    context.saveGState()
-    context.addPath(tilePath)
-    context.clip()
-    let background = CGGradient(
-        colorsSpace: CGColorSpaceCreateDeviceRGB(),
-        colors: [color(0x314A70), color(0x172A48), color(0x0B1425)] as CFArray,
-        locations: [0, 0.48, 1]
-    )!
-    context.drawLinearGradient(
-        background,
-        start: CGPoint(x: 165, y: 895),
-        end: CGPoint(x: 865, y: 120),
-        options: []
-    )
-
-    let glow = CGGradient(
-        colorsSpace: CGColorSpaceCreateDeviceRGB(),
-        colors: [color(0xB9E7FF, alpha: 0.28), color(0xB9E7FF, alpha: 0)] as CFArray,
-        locations: [0, 1]
-    )!
-    context.drawRadialGradient(
-        glow,
-        startCenter: CGPoint(x: 246, y: 824),
-        startRadius: 0,
-        endCenter: CGPoint(x: 246, y: 824),
-        endRadius: 520,
-        options: []
-    )
-    context.restoreGState()
 
     context.addPath(tilePath)
-    context.setStrokeColor(color(0xFFFFFF, alpha: 0.28))
-    context.setLineWidth(5)
+    context.setStrokeColor(color(0x34373D))
+    context.setLineWidth(4)
     context.strokePath()
 
-    let center = CGPoint(x: 512, y: 522)
-    context.saveGState()
-    context.setShadow(offset: CGSize(width: 0, height: -12), blur: 28, color: color(0x000000, alpha: 0.34))
-    drawArc(in: context, center: center, radius: 274, startDegrees: -34, endDegrees: 126, width: 92, color: color(0x5795FF))
-    drawArc(in: context, center: center, radius: 274, startDegrees: 146, endDegrees: 306, width: 92, color: color(0xFF795A))
-    context.restoreGState()
+    let center = CGPoint(x: 512, y: 514)
+    drawArc(in: context, center: center, radius: 272, startDegrees: -42, endDegrees: 225, width: 72, color: color(0x282C33))
+    drawArc(in: context, center: center, radius: 272, startDegrees: -42, endDegrees: 148, width: 72, color: color(0x4C9AFF))
 
-    drawArc(in: context, center: center, radius: 274, startDegrees: -30, endDegrees: 80, width: 14, color: color(0xFFFFFF, alpha: 0.38))
-    drawArc(in: context, center: center, radius: 274, startDegrees: 150, endDegrees: 248, width: 14, color: color(0xFFFFFF, alpha: 0.25))
-
-    let coreRect = CGRect(x: 346, y: 356, width: 332, height: 332)
-    context.saveGState()
-    context.setShadow(offset: CGSize(width: 0, height: -10), blur: 26, color: color(0x000000, alpha: 0.35))
-    context.addEllipse(in: coreRect)
-    context.setFillColor(color(0x101D32, alpha: 0.90))
-    context.fillPath()
-    context.restoreGState()
-
-    context.addEllipse(in: coreRect.insetBy(dx: 3, dy: 3))
-    context.setStrokeColor(color(0xFFFFFF, alpha: 0.17))
-    context.setLineWidth(6)
-    context.strokePath()
-
-    context.setStrokeColor(color(0xF6FAFF, alpha: 0.96))
-    context.setLineWidth(42)
+    context.setStrokeColor(color(0xF5F7FA))
+    context.setLineWidth(50)
     context.setLineCap(.round)
-    context.addEllipse(in: CGRect(x: 422, y: 432, width: 180, height: 180))
+    context.addEllipse(in: CGRect(x: 395, y: 397, width: 234, height: 234))
     context.strokePath()
-    context.move(to: CGPoint(x: 570, y: 456))
-    context.addLine(to: CGPoint(x: 638, y: 388))
+    context.move(to: CGPoint(x: 592, y: 431))
+    context.addLine(to: CGPoint(x: 675, y: 348))
     context.strokePath()
 
-    context.setFillColor(color(0xFFFFFF, alpha: 0.82))
-    context.fillEllipse(in: CGRect(x: 770, y: 760, width: 28, height: 28))
+    context.setFillColor(color(0x4C9AFF))
+    context.fillEllipse(in: CGRect(x: 703, y: 721, width: 30, height: 30))
 
     return bitmap
 }
