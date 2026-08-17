@@ -40,6 +40,8 @@
 "settings.language" = "显示语言";
 "settings.chinese" = "简体中文";
 "settings.english" = "English";
+"settings.floatingWindow" = "显示额度悬浮窗";
+"settings.floatingWindow.detail" = "在桌面上常驻显示额度，鼠标移入时自动展开。";
 "settings.launchAtLogin" = "登录后自动启动";
 "settings.launchAtLogin.detail" = "在你登录 Mac 后自动运行 QuotaDot，并保持菜单栏与悬浮额度可用。";
 "settings.systemStatus" = "系统状态";

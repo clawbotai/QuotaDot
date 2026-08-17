@@ -5,6 +5,8 @@ struct SettingsView: View {
     let language: LanguageSettings
     let store: QuotaStore
     let deepSeekCredentials: DeepSeekCredentialManager
+    let floatingWindowSettings: FloatingWindowSettings
+    let windowController: FloatingWindowController
     @State private var loginItem = LoginItemManager()
     @State private var deepSeekDraft = ""
     @State private var validationMessageKey: String?
@@ -24,6 +26,18 @@ struct SettingsView: View {
                     Text(language.text("settings.english")).tag(AppLanguage.english)
                 }
                 .pickerStyle(.segmented)
+
+                Toggle(isOn: Binding(
+                    get: { floatingWindowSettings.isEnabled },
+                    set: { windowController.setEnabled($0) }
+                )) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(language.text("settings.floatingWindow"))
+                        Text(language.text("settings.floatingWindow.detail"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
 
                 Toggle(isOn: Binding(
                     get: { loginItem.isRegistered },

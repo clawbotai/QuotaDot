@@ -50,7 +50,9 @@ struct QuotaDotApp: App {
             SettingsView(
                 language: appDelegate.language,
                 store: appDelegate.store,
-                deepSeekCredentials: appDelegate.deepSeekCredentials
+                deepSeekCredentials: appDelegate.deepSeekCredentials,
+                floatingWindowSettings: appDelegate.floatingWindowSettings,
+                windowController: appDelegate.windowController
             )
         }
     }
@@ -89,7 +91,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     lazy var store = QuotaStore(deepSeekCredentials: deepSeekCredentials)
     let historyStore = TokenHistoryStore()
     let language = LanguageSettings()
-    lazy var windowController = FloatingWindowController(store: store, language: language)
+    let floatingWindowSettings = FloatingWindowSettings()
+    lazy var windowController = FloatingWindowController(
+        store: store,
+        language: language,
+        settings: floatingWindowSettings
+    )
     private var refreshTask: Task<Void, Never>?
     private var historyLoadTask: Task<Void, Never>?
 

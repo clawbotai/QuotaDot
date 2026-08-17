@@ -38,17 +38,20 @@ enum QuotaWindowMetrics {
 final class FloatingWindowController: NSObject {
     private let store: QuotaStore
     private let language: LanguageSettings
+    private let settings: FloatingWindowSettings
     private var panel: NSPanel?
     private var compact = true
     private var hoverMonitor: Any?
     private var pointerTimer: Timer?
 
-    init(store: QuotaStore, language: LanguageSettings) {
+    init(store: QuotaStore, language: LanguageSettings, settings: FloatingWindowSettings) {
         self.store = store
         self.language = language
+        self.settings = settings
     }
 
     func show() {
+        guard settings.isEnabled else { return }
         guard panel == nil else { panel?.orderFrontRegardless(); return }
         let initialSize = compactSize
         let panel = NSPanel(
@@ -76,9 +79,20 @@ final class FloatingWindowController: NSObject {
     }
 
     func expandAndShow() {
+        settings.isEnabled = true
+        show()
         setCompact(false)
         if let panel { synchronizePanelSize(panel) }
         panel?.orderFrontRegardless()
+    }
+
+    func setEnabled(_ enabled: Bool) {
+        settings.isEnabled = enabled
+        if enabled {
+            show()
+        } else {
+            panel?.orderOut(nil)
+        }
     }
 
     private func rootView() -> some View {

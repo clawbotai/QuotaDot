@@ -40,6 +40,8 @@
 "settings.language" = "Language";
 "settings.chinese" = "简体中文";
 "settings.english" = "English";
+"settings.floatingWindow" = "Show floating quota window";
+"settings.floatingWindow.detail" = "Keep quota visible on the desktop and expand it automatically on hover.";
 "settings.launchAtLogin" = "Launch at login";
 "settings.launchAtLogin.detail" = "Start QuotaDot after you sign in to your Mac and keep the menu bar and floating quota available.";
 "settings.systemStatus" = "System status";
