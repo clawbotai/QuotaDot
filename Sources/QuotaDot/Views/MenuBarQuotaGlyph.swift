@@ -1,29 +1,35 @@
 import AppKit
 import SwiftUI
 
-struct DeepSeekMenuBarGlyph: View {
-    var body: some View {
-        Group {
-            if let image = Self.templateImage {
-                Image(nsImage: image)
-                    .resizable()
-                    .renderingMode(.template)
-            } else {
-                Image(systemName: "sparkles")
-                    .resizable()
-            }
-        }
-        .scaledToFit()
-        .frame(width: 16, height: 16)
-        .accessibilityHidden(true)
-    }
+@MainActor
+enum MenuBarIconAsset {
+    static let size = NSSize(width: 16, height: 16)
 
-    private static let templateImage: NSImage? = {
-        guard let url = QuotaResourceBundle.current.url(forResource: "deepseek-official", withExtension: "png"),
-              let image = NSImage(contentsOf: url) else { return nil }
+    static let deepSeekTemplateImage: NSImage = {
+        let source = QuotaResourceBundle.current.url(forResource: "deepseek-official", withExtension: "png")
+            .flatMap(NSImage.init(contentsOf:))
+            ?? NSImage(systemSymbolName: "sparkles", accessibilityDescription: nil)!
+        let image = NSImage(size: size)
+        image.lockFocus()
+        source.draw(
+            in: NSRect(origin: .zero, size: size),
+            from: NSRect(origin: .zero, size: source.size),
+            operation: .sourceOver,
+            fraction: 1
+        )
+        image.unlockFocus()
         image.isTemplate = true
         return image
     }()
+}
+
+struct DeepSeekMenuBarGlyph: View {
+    var body: some View {
+        Image(nsImage: MenuBarIconAsset.deepSeekTemplateImage)
+            .renderingMode(.template)
+            .frame(width: MenuBarIconAsset.size.width, height: MenuBarIconAsset.size.height)
+            .accessibilityHidden(true)
+    }
 }
 
 struct MenuBarQuotaGlyph: View {

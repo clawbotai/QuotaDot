@@ -14,12 +14,14 @@ struct QuotaDotApp: App {
             )
         } label: {
             HStack(spacing: 4) {
-                if appDelegate.store.hasQuotaProviders {
-                    MenuBarQuotaGlyph()
-                    Text(QuotaFormatters.percent(appDelegate.store.lowestRemaining))
-                } else if let balance = appDelegate.store.deepSeekProvider?.balance {
-                    DeepSeekMenuBarGlyph()
-                    Text(QuotaFormatters.compactCNY(balance.toppedUp))
+                if let provider = menuBarProvider {
+                    if let balance = provider.balance {
+                        DeepSeekMenuBarGlyph()
+                        Text(QuotaFormatters.compactCNY(balance.toppedUp))
+                    } else {
+                        MenuBarQuotaGlyph()
+                        Text(QuotaFormatters.percent(lowestRemaining(for: provider)))
+                    }
                 } else {
                     MenuBarQuotaGlyph()
                     Text("--")
@@ -52,16 +54,33 @@ struct QuotaDotApp: App {
                 store: appDelegate.store,
                 deepSeekCredentials: appDelegate.deepSeekCredentials,
                 floatingWindowSettings: appDelegate.floatingWindowSettings,
+                menuBarProviderSettings: appDelegate.menuBarProviderSettings,
                 windowController: appDelegate.windowController
             )
         }
     }
 
+    private var menuBarProvider: ProviderUsage? {
+        appDelegate.menuBarProviderSettings.provider(from: appDelegate.store.providers)
+    }
+
+    private func lowestRemaining(for provider: ProviderUsage) -> Double? {
+        [provider.session?.remainingPercent, provider.weekly?.remainingPercent]
+            .compactMap { $0 }
+            .min()
+    }
+
     private var menuBarAccessibilityText: String {
-        guard let remaining = appDelegate.store.lowestRemaining else {
+        guard let provider = menuBarProvider else {
             return appDelegate.language.text("menuBar.accessibility.loading")
         }
-        return appDelegate.language.text(
+        if let balance = provider.balance {
+            return "\(provider.displayName), \(QuotaFormatters.cny(balance.toppedUp))"
+        }
+        guard let remaining = lowestRemaining(for: provider) else {
+            return appDelegate.language.text("menuBar.accessibility.loading")
+        }
+        return "\(provider.displayName), " + appDelegate.language.text(
             "menuBar.accessibility.remaining",
             QuotaFormatters.percent(remaining)
         )
@@ -92,6 +111,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let historyStore = TokenHistoryStore()
     let language = LanguageSettings()
     let floatingWindowSettings = FloatingWindowSettings()
+    let menuBarProviderSettings = MenuBarProviderSettings()
     lazy var windowController = FloatingWindowController(
         store: store,
         language: language,

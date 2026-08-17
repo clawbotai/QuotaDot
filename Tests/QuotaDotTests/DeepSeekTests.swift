@@ -1,9 +1,17 @@
 import Foundation
+import AppKit
 import Security
 import Testing
 @testable import QuotaDot
 
 struct DeepSeekTests {
+    @Test @MainActor func menuBarDeepSeekIconIsPreRenderedToTheStatusItemSize() {
+        let image = MenuBarIconAsset.deepSeekTemplateImage
+
+        #expect(image.size == NSSize(width: 16, height: 16))
+        #expect(image.isTemplate)
+    }
+
     @Test @MainActor func credentialManagerStoresAndDeletesOnlyThroughInjectedKeychain() throws {
         let keychain = InMemoryDeepSeekCredentialStore()
         let credentials = DeepSeekCredentialManager(store: keychain)

@@ -6,6 +6,7 @@ struct SettingsView: View {
     let store: QuotaStore
     let deepSeekCredentials: DeepSeekCredentialManager
     let floatingWindowSettings: FloatingWindowSettings
+    let menuBarProviderSettings: MenuBarProviderSettings
     let windowController: FloatingWindowController
     @State private var loginItem = LoginItemManager()
     @State private var deepSeekDraft = ""
@@ -26,6 +27,23 @@ struct SettingsView: View {
                     Text(language.text("settings.english")).tag(AppLanguage.english)
                 }
                 .pickerStyle(.segmented)
+
+                if !store.providers.isEmpty {
+                    Picker(
+                        language.text("settings.menuBarProvider"),
+                        selection: Binding(
+                            get: {
+                                menuBarProviderSettings.provider(from: store.providers)?.providerId
+                                    ?? store.providers[0].providerId
+                            },
+                            set: { menuBarProviderSettings.selectedProviderId = $0 }
+                        )
+                    ) {
+                        ForEach(store.providers) { provider in
+                            Text(provider.displayName).tag(provider.providerId)
+                        }
+                    }
+                }
 
                 Toggle(isOn: Binding(
                     get: { floatingWindowSettings.isEnabled },

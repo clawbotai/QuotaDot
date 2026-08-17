@@ -38,6 +38,7 @@
 
 "settings.general" = "常规";
 "settings.language" = "显示语言";
+"settings.menuBarProvider" = "菜单栏默认显示";
 "settings.chinese" = "简体中文";
 "settings.english" = "English";
 "settings.floatingWindow" = "显示额度悬浮窗";
