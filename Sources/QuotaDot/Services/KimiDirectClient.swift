@@ -249,7 +249,10 @@ enum KimiUsageParser {
         guard let detail,
               let limit = detail.limit?.value,
               limit > 0 else { return nil }
-        let remaining = min(max(detail.remaining?.value ?? limit, 0), limit)
+        // The weekly endpoint returns `used`, while window details return
+        // `remaining`. Prefer the explicit remaining value when available.
+        let remainingValue = detail.remaining?.value ?? (limit - (detail.used?.value ?? 0))
+        let remaining = min(max(remainingValue, 0), limit)
         return UsageLine(
             type: "progress",
             label: label,
@@ -351,6 +354,7 @@ private extension KimiUsageParser {
 
     struct QuotaDetail: Decodable {
         let limit: FlexibleNumber?
+        let used: FlexibleNumber?
         let remaining: FlexibleNumber?
         let resetTime: String?
     }
