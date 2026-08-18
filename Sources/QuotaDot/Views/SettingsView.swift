@@ -7,6 +7,7 @@ struct SettingsView: View {
     let deepSeekCredentials: DeepSeekCredentialManager
     let floatingWindowSettings: FloatingWindowSettings
     let menuBarProviderSettings: MenuBarProviderSettings
+    let providerVisibility: ProviderVisibilitySettings
     let windowController: FloatingWindowController
     @State private var loginItem = LoginItemManager()
     @State private var deepSeekDraft = ""
@@ -29,20 +30,26 @@ struct SettingsView: View {
                 .pickerStyle(.segmented)
 
                 if !store.providers.isEmpty {
+                    let visibleProviders = store.providers.filter(providerVisibility.isVisible)
                     Picker(
                         language.text("settings.menuBarProvider"),
                         selection: Binding(
                             get: {
-                                menuBarProviderSettings.provider(from: store.providers)?.providerId
-                                    ?? store.providers[0].providerId
+                                let selected = menuBarProviderSettings.selectedProviderId?.lowercased()
+                                let visible = visibleProviders.first {
+                                    $0.providerId.lowercased() == selected
+                                }
+                                return visible?.providerId ?? visibleProviders.first?.providerId ?? store.providers[0].providerId
                             },
                             set: { menuBarProviderSettings.selectedProviderId = $0 }
                         )
                     ) {
-                        ForEach(store.providers) { provider in
+                        ForEach(visibleProviders) { provider in
                             Text(provider.displayName).tag(provider.providerId)
                         }
                     }
+
+                    providerVisibilitySection
                 }
 
                 Toggle(isOn: Binding(
@@ -131,7 +138,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 540, height: 500)
+        .frame(width: 540, height: 620)
         .onAppear { loginItem.refresh() }
         .onDisappear {
             deepSeekDraft = ""
@@ -140,6 +147,36 @@ struct SettingsView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { loginItem.refresh() }
         }
+    }
+
+    private var providerVisibilitySection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(language.text("settings.providerVisibility"))
+                .font(.callout.weight(.medium))
+            ForEach(store.providers) { provider in
+                Toggle(isOn: Binding(
+                    get: { providerVisibility.isVisible(provider) },
+                    set: { isVisible in
+                        providerVisibility.setVisible(isVisible, for: provider)
+                        if !isVisible {
+                            clearMenuBarSelectionIfHidden(provider: provider)
+                        }
+                    }
+                )) {
+                    Text(provider.displayName)
+                }
+            }
+        }
+        .padding(.top, 8)
+    }
+
+    private func clearMenuBarSelectionIfHidden(provider: ProviderUsage) {
+        guard menuBarProviderSettings.selectedProviderId?.lowercased() == provider.providerId.lowercased() else { return }
+        let fallback = store.providers.first {
+            $0.providerId.lowercased() != provider.providerId.lowercased()
+                && providerVisibility.isVisible($0)
+        }
+        menuBarProviderSettings.selectedProviderId = fallback?.providerId
     }
 
     private func openDeepSeekAPIKeys() {

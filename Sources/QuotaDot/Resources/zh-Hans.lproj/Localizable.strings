@@ -46,6 +46,7 @@
 "settings.launchAtLogin" = "登录后自动启动";
 "settings.launchAtLogin.detail" = "在你登录 Mac 后自动运行 QuotaDot，并保持菜单栏与悬浮额度可用。";
 "settings.systemStatus" = "系统状态";
+"settings.providerVisibility" = "在悬浮窗中显示";
 "settings.approvalRequired" = "macOS 需要你在系统设置中允许 QuotaDot。";
 "settings.openLoginItems" = "打开登录项设置";
 "settings.data" = "数据";

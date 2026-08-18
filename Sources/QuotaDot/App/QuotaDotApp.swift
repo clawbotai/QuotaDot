@@ -10,7 +10,8 @@ struct QuotaDotApp: App {
             MenuBarContent(
                 store: appDelegate.store,
                 windowController: appDelegate.windowController,
-                language: appDelegate.language
+                language: appDelegate.language,
+                providerVisibility: appDelegate.providerVisibility
             )
         } label: {
             HStack(spacing: 4) {
@@ -55,13 +56,18 @@ struct QuotaDotApp: App {
                 deepSeekCredentials: appDelegate.deepSeekCredentials,
                 floatingWindowSettings: appDelegate.floatingWindowSettings,
                 menuBarProviderSettings: appDelegate.menuBarProviderSettings,
+                providerVisibility: appDelegate.providerVisibility,
                 windowController: appDelegate.windowController
             )
         }
     }
 
+    private var visibleProviders: [ProviderUsage] {
+        appDelegate.store.providers.filter(appDelegate.providerVisibility.isVisible)
+    }
+
     private var menuBarProvider: ProviderUsage? {
-        appDelegate.menuBarProviderSettings.provider(from: appDelegate.store.providers)
+        appDelegate.menuBarProviderSettings.provider(from: visibleProviders)
     }
 
     private func lowestRemaining(for provider: ProviderUsage) -> Double? {
@@ -112,10 +118,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let language = LanguageSettings()
     let floatingWindowSettings = FloatingWindowSettings()
     let menuBarProviderSettings = MenuBarProviderSettings()
+    let providerVisibility = ProviderVisibilitySettings()
     lazy var windowController = FloatingWindowController(
         store: store,
         language: language,
-        settings: floatingWindowSettings
+        settings: floatingWindowSettings,
+        providerVisibility: providerVisibility
     )
     private var refreshTask: Task<Void, Never>?
     private var historyLoadTask: Task<Void, Never>?
@@ -138,12 +146,14 @@ private struct MenuBarContent: View {
     let store: QuotaStore
     let windowController: FloatingWindowController
     let language: LanguageSettings
+    let providerVisibility: ProviderVisibilitySettings
 
     var body: some View {
-        if store.providers.isEmpty {
+        let visibleProviders = store.providers.filter(providerVisibility.isVisible)
+        if visibleProviders.isEmpty {
             Text(language.text(store.errorMessageKey ?? "menu.loading"))
         } else {
-            ForEach(store.providers) { provider in
+            ForEach(visibleProviders) { provider in
                 Text(menuSummary(for: provider))
             }
         }

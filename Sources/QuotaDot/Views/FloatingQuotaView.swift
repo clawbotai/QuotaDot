@@ -3,10 +3,15 @@ import SwiftUI
 struct FloatingQuotaView: View {
     let store: QuotaStore
     let language: LanguageSettings
+    let providerVisibility: ProviderVisibilitySettings
     @Binding var compact: Bool
 
     var body: some View {
         if compact { compactView } else { expandedView }
+    }
+
+    private var visibleProviders: [ProviderUsage] {
+        store.providers.filter(providerVisibility.isVisible)
     }
 
     private var compactView: some View {
@@ -32,7 +37,7 @@ struct FloatingQuotaView: View {
     private var compactBadges: some View {
         let activeProviderIds = store.activeProviderIds
         return HStack(spacing: 8) {
-            ForEach(store.providers) { provider in
+            ForEach(visibleProviders) { provider in
                 CompactProviderBadge(
                     provider: provider,
                     remaining: providerLowest(provider),
@@ -51,10 +56,10 @@ struct FloatingQuotaView: View {
 
             VStack(spacing: 0) {
                 header
-                if store.providers.isEmpty {
+                if visibleProviders.isEmpty {
                     unavailableState
                 } else {
-                    ForEach(Array(store.providers.enumerated()), id: \.element.id) { index, provider in
+                    ForEach(Array(visibleProviders.enumerated()), id: \.element.id) { index, provider in
                         if index > 0 {
                             Divider()
                                 .frame(height: QuotaWindowMetrics.dividerHeight)
@@ -203,7 +208,7 @@ struct FloatingQuotaView: View {
         "\(weather.displayLocation(language: language.language)) · \(weather.condition(language: language)) · \(weather.temperature)°"
     }
 
-    private var compactWidth: CGFloat { QuotaWindowMetrics.compactWidth(providerCount: store.providers.count) }
+    private var compactWidth: CGFloat { QuotaWindowMetrics.compactWidth(providerCount: visibleProviders.count) }
     private func providerLowest(_ provider: ProviderUsage) -> Double? { [provider.session?.remainingPercent, provider.weekly?.remainingPercent].compactMap { $0 }.min() }
 }
 

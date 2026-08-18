@@ -46,6 +46,7 @@
 "settings.launchAtLogin" = "Launch at login";
 "settings.launchAtLogin.detail" = "Start QuotaDot after you sign in to your Mac and keep the menu bar and floating quota available.";
 "settings.systemStatus" = "System status";
+"settings.providerVisibility" = "Show in floating window";
 "settings.approvalRequired" = "macOS needs you to allow QuotaDot in System Settings.";
 "settings.openLoginItems" = "Open Login Items";
 "settings.data" = "Data";

@@ -39,15 +39,22 @@ final class FloatingWindowController: NSObject {
     private let store: QuotaStore
     private let language: LanguageSettings
     private let settings: FloatingWindowSettings
+    private let providerVisibility: ProviderVisibilitySettings
     private var panel: NSPanel?
     private var compact = true
     private var hoverMonitor: Any?
     private var pointerTimer: Timer?
 
-    init(store: QuotaStore, language: LanguageSettings, settings: FloatingWindowSettings) {
+    init(
+        store: QuotaStore,
+        language: LanguageSettings,
+        settings: FloatingWindowSettings,
+        providerVisibility: ProviderVisibilitySettings
+    ) {
         self.store = store
         self.language = language
         self.settings = settings
+        self.providerVisibility = providerVisibility
     }
 
     func show() {
@@ -96,10 +103,15 @@ final class FloatingWindowController: NSObject {
     }
 
     private func rootView() -> some View {
-        FloatingQuotaView(store: store, language: language, compact: Binding(
-            get: { self.compact },
-            set: { self.setCompact($0) }
-        ))
+        FloatingQuotaView(
+            store: store,
+            language: language,
+            providerVisibility: providerVisibility,
+            compact: Binding(
+                get: { self.compact },
+                set: { self.setCompact($0) }
+            )
+        )
     }
 
     private func setCompact(_ value: Bool) {
@@ -123,16 +135,20 @@ final class FloatingWindowController: NSObject {
         return hosting
     }
 
+    private var visibleProviders: [ProviderUsage] {
+        store.providers.filter(providerVisibility.isVisible)
+    }
+
     private var expandedHeight: CGFloat {
         QuotaWindowMetrics.expandedHeight(
-            providers: store.providers,
+            providers: visibleProviders,
             hasCodexCredits: store.codexResetCredits != nil
         )
     }
 
     private var compactSize: NSSize {
         NSSize(
-            width: QuotaWindowMetrics.compactWidth(providerCount: store.providers.count),
+            width: QuotaWindowMetrics.compactWidth(providerCount: visibleProviders.count),
             height: QuotaWindowMetrics.compactHeight
         )
     }
