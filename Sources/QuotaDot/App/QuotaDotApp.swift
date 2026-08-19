@@ -54,6 +54,7 @@ struct QuotaDotApp: App {
                 language: appDelegate.language,
                 store: appDelegate.store,
                 deepSeekCredentials: appDelegate.deepSeekCredentials,
+                glmCredentials: appDelegate.glmCredentials,
                 floatingWindowSettings: appDelegate.floatingWindowSettings,
                 menuBarProviderSettings: appDelegate.menuBarProviderSettings,
                 providerVisibility: appDelegate.providerVisibility,
@@ -113,7 +114,8 @@ private struct TokenHistoryCommands: Commands {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let deepSeekCredentials = DeepSeekCredentialManager()
-    lazy var store = QuotaStore(deepSeekCredentials: deepSeekCredentials)
+    let glmCredentials = GLMCredentialManager()
+    lazy var store: QuotaStore = makeStore()
     let historyStore = TokenHistoryStore()
     let language = LanguageSettings()
     let floatingWindowSettings = FloatingWindowSettings()
@@ -127,6 +129,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     private var refreshTask: Task<Void, Never>?
     private var historyLoadTask: Task<Void, Never>?
+
+    private func makeStore() -> QuotaStore {
+        QuotaStore(deepSeekCredentials: deepSeekCredentials, glmCredentials: glmCredentials)
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)

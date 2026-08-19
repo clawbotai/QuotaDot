@@ -55,6 +55,7 @@ extension ProviderUsage {
         switch providerId.lowercased() {
         case "claude": Color(red: 0.93, green: 0.39, blue: 0.22)
         case "kimi": Color(red: 0.46, green: 0.35, blue: 0.94)
+        case "glm": Color(red: 0.30, green: 0.35, blue: 0.95)
         case "deepseek": Color(red: 0.20, green: 0.43, blue: 0.92)
         default: Color(red: 0.20, green: 0.48, blue: 0.96)
         }

@@ -185,6 +185,7 @@ struct ProviderLogo: View {
         case "codex": name = "codex-official"
         case "claude": name = "claude-official"
         case "kimi": name = "kimi-official"
+        case "glm": name = "glm-official"
         case "deepseek": name = "deepseek-official"
         default: return nil
         }

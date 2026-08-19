@@ -53,7 +53,7 @@
 "settings.quotaSource" = "额度来源";
 "settings.refreshRate" = "刷新频率";
 "settings.refreshRate.value" = "60 秒";
-"settings.privacy" = "Codex、Claude 与 Kimi 凭据只用于各自官方接口；DeepSeek API Key 经验证后保存在 macOS 钥匙串；Token 历史仅从本机记录计算；位置坐标仅发送给天气服务。";
+"settings.privacy" = "Codex、Claude 与 Kimi 凭据只用于各自官方接口；DeepSeek 与 GLM API Key 经验证后保存在 macOS 钥匙串；Token 历史仅从本机记录计算；位置坐标仅发送给天气服务。";
 
 "login.enabled" = "已启用";
 "login.disabled" = "未启用";
@@ -148,3 +148,26 @@
 "deepseek.status.rateLimited" = "DeepSeek 暂时限制请求";
 "deepseek.status.network" = "暂时无法连接 DeepSeek";
 "deepseek.status.contract" = "DeepSeek 余额响应暂不可用";
+
+"glm.settings.section" = "GLM（智谱）API";
+"glm.settings.status" = "状态";
+"glm.settings.apiKey" = "粘贴智谱 API Key";
+"glm.settings.getKey" = "获取 API Key";
+"glm.settings.connect" = "连接";
+"glm.settings.retry" = "重新验证";
+"glm.settings.disconnect" = "断开连接";
+"glm.settings.privacy" = "API Key 先通过智谱官方用量接口验证，成功后才保存到此 Mac 的钥匙串；QuotaDot 不会把 Key 写入偏好设置或日志。";
+"glm.settings.invalidKey" = "请输入有效的智谱 API Key。";
+"glm.settings.keychainFailed" = "无法访问 macOS 钥匙串，请稍后重试。";
+"glm.status.notConnected" = "未连接";
+"glm.status.idle" = "等待验证";
+"glm.status.checking" = "正在验证 API Key 并读取用量";
+"glm.status.live" = "已连接，用量已读取";
+"glm.status.invalidKey" = "API Key 格式无效";
+"glm.status.keychainFailed" = "无法安全保存或读取 API Key";
+"glm.status.expired" = "连接已失效，请重新粘贴 API Key";
+"glm.status.unauthorized" = "请求被 GLM 拒绝";
+"glm.status.quotaMissing" = "未返回 GLM 配额窗口";
+"glm.status.rateLimited" = "GLM 暂时限制请求";
+"glm.status.network" = "暂时无法连接 GLM";
+"glm.status.contract" = "GLM 用量响应暂不可用";

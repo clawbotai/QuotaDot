@@ -53,7 +53,7 @@
 "settings.quotaSource" = "Quota source";
 "settings.refreshRate" = "Refresh interval";
 "settings.refreshRate.value" = "60 seconds";
-"settings.privacy" = "Codex, Claude, and Kimi credentials are used only with their official endpoints. A validated DeepSeek API key is stored in macOS Keychain. Token history is calculated locally. Coordinates go only to the weather service.";
+"settings.privacy" = "Codex, Claude, and Kimi credentials are used only with their official endpoints. Validated DeepSeek and GLM API keys are stored in macOS Keychain. Token history is calculated locally. Coordinates go only to the weather service.";
 
 "login.enabled" = "Enabled";
 "login.disabled" = "Disabled";
@@ -148,3 +148,26 @@
 "deepseek.status.rateLimited" = "DeepSeek is temporarily rate limiting requests";
 "deepseek.status.network" = "DeepSeek is temporarily unavailable";
 "deepseek.status.contract" = "DeepSeek balance response is unavailable";
+
+"glm.settings.section" = "GLM (Zhipu) API";
+"glm.settings.status" = "Status";
+"glm.settings.apiKey" = "Paste Zhipu API key";
+"glm.settings.getKey" = "Get API Key";
+"glm.settings.connect" = "Connect";
+"glm.settings.retry" = "Verify again";
+"glm.settings.disconnect" = "Disconnect";
+"glm.settings.privacy" = "The API key is verified with Zhipu's official quota endpoint before it is stored in this Mac's Keychain. QuotaDot never writes it to preferences or logs.";
+"glm.settings.invalidKey" = "Enter a valid Zhipu API key.";
+"glm.settings.keychainFailed" = "macOS Keychain is unavailable. Try again.";
+"glm.status.notConnected" = "Not connected";
+"glm.status.idle" = "Waiting to verify";
+"glm.status.checking" = "Verifying API key and reading quota";
+"glm.status.live" = "Connected and quota loaded";
+"glm.status.invalidKey" = "API key format is invalid";
+"glm.status.keychainFailed" = "Unable to securely save or read the API key";
+"glm.status.expired" = "Connection expired; paste the API key again";
+"glm.status.unauthorized" = "GLM rejected the request";
+"glm.status.quotaMissing" = "No GLM quota windows returned";
+"glm.status.rateLimited" = "GLM is temporarily rate limiting requests";
+"glm.status.network" = "GLM is temporarily unavailable";
+"glm.status.contract" = "GLM quota response is unavailable";

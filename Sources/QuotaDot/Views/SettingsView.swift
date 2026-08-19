@@ -5,13 +5,16 @@ struct SettingsView: View {
     let language: LanguageSettings
     let store: QuotaStore
     let deepSeekCredentials: DeepSeekCredentialManager
+    let glmCredentials: GLMCredentialManager
     let floatingWindowSettings: FloatingWindowSettings
     let menuBarProviderSettings: MenuBarProviderSettings
     let providerVisibility: ProviderVisibilitySettings
     let windowController: FloatingWindowController
     @State private var loginItem = LoginItemManager()
     @State private var deepSeekDraft = ""
+    @State private var glmDraft = ""
     @State private var validationMessageKey: String?
+    @State private var glmValidationMessageKey: String?
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -95,7 +98,7 @@ struct SettingsView: View {
             }
 
             Section(language.text("settings.data")) {
-                LabeledContent(language.text("settings.quotaSource"), value: "Codex + Claude + Kimi + DeepSeek Direct")
+                LabeledContent(language.text("settings.quotaSource"), value: "Codex + Claude + Kimi + GLM + DeepSeek Direct")
                 LabeledContent(language.text("settings.refreshRate"), value: language.text("settings.refreshRate.value"))
                 Text(language.text("settings.privacy"))
                     .font(.caption)
@@ -136,13 +139,50 @@ struct SettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+
+            Section(language.text("glm.settings.section")) {
+                LabeledContent(language.text("glm.settings.status")) {
+                    Label(glmStatusText, systemImage: glmStatusSymbol)
+                        .foregroundStyle(glmStatusColor)
+                }
+
+                SecureField(language.text("glm.settings.apiKey"), text: $glmDraft)
+                    .textFieldStyle(.roundedBorder)
+                    .textContentType(.password)
+
+                if let glmValidationMessageKey {
+                    Label(language.text(glmValidationMessageKey), systemImage: "xmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+
+                HStack {
+                    Button(language.text("glm.settings.getKey")) { openGLMAPIKeys() }
+                    Button(language.text("glm.settings.connect")) { connectGLM() }
+                        .disabled(glmDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || store.isRefreshing)
+                    Button(language.text("glm.settings.retry")) { store.refreshGLM() }
+                        .disabled(store.isRefreshing)
+                    Spacer()
+                    if glmCredentials.hasStoredAPIKey || store.hasPendingGLMCredential || store.glmProvider != nil {
+                        Button(language.text("glm.settings.disconnect"), role: .destructive) {
+                            disconnectGLM()
+                        }
+                    }
+                }
+
+                Text(language.text("glm.settings.privacy"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
-        .frame(width: 540, height: 620)
+        .frame(width: 540, height: 780)
         .onAppear { loginItem.refresh() }
         .onDisappear {
             deepSeekDraft = ""
+            glmDraft = ""
             validationMessageKey = nil
+            glmValidationMessageKey = nil
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { loginItem.refresh() }
@@ -182,6 +222,75 @@ struct SettingsView: View {
     private func openDeepSeekAPIKeys() {
         guard let url = URL(string: "https://platform.deepseek.com/api_keys") else { return }
         NSWorkspace.shared.open(url)
+    }
+
+    private func openGLMAPIKeys() {
+        guard let url = URL(string: "https://www.bigmodel.cn/usercenter/proj-mgmt/apikeys") else { return }
+        NSWorkspace.shared.open(url)
+    }
+
+    private func connectGLM() {
+        guard store.connectGLM(apiKey: glmDraft) else {
+            glmValidationMessageKey = "glm.settings.invalidKey"
+            glmDraft = ""
+            return
+        }
+        glmValidationMessageKey = nil
+        glmDraft = ""
+    }
+
+    private func disconnectGLM() {
+        if !store.disconnectGLM() {
+            glmValidationMessageKey = "glm.settings.keychainFailed"
+        } else {
+            glmValidationMessageKey = nil
+        }
+        glmDraft = ""
+    }
+
+    private var glmStatusText: String {
+        switch store.glmStatus {
+        case .idle:
+            return language.text(glmCredentials.hasStoredAPIKey ? "glm.status.idle" : "glm.status.notConnected")
+        case .checking:
+            return language.text("glm.status.checking")
+        case .live:
+            return language.text("glm.status.live")
+        case let .failed(error):
+            return language.text(glmStatusKey(for: error))
+        }
+    }
+
+    private func glmStatusKey(for error: GLMErrorKind) -> String {
+        switch error {
+        case .keyMissing: "glm.status.notConnected"
+        case .invalidLocalKey: "glm.status.invalidKey"
+        case .credentialStoreFailure: "glm.status.keychainFailed"
+        case .unauthorized: "glm.status.expired"
+        case .clientRejected: "glm.status.unauthorized"
+        case .quotaMissing: "glm.status.quotaMissing"
+        case .rateLimited: "glm.status.rateLimited"
+        case .serverUnavailable, .networkFailure: "glm.status.network"
+        case .unexpectedHTTPStatus, .redirectRejected, .responseTooLarge, .malformedResponse:
+            "glm.status.contract"
+        }
+    }
+
+    private var glmStatusSymbol: String {
+        switch store.glmStatus {
+        case .live: "checkmark.circle.fill"
+        case .checking: "arrow.triangle.2.circlepath"
+        case .failed: "exclamationmark.triangle.fill"
+        case .idle: "circle.dashed"
+        }
+    }
+
+    private var glmStatusColor: Color {
+        switch store.glmStatus {
+        case .live: .green
+        case .checking, .idle: .secondary
+        case .failed: .red
+        }
     }
 
     private func connectDeepSeek() {

@@ -31,6 +31,29 @@ enum DeepSeekRefreshStatus: Sendable, Equatable {
     case failed(DeepSeekErrorKind)
 }
 
+enum GLMErrorKind: Error, Sendable, Equatable {
+    case keyMissing
+    case invalidLocalKey
+    case credentialStoreFailure
+    case unauthorized
+    case clientRejected
+    case rateLimited
+    case serverUnavailable
+    case unexpectedHTTPStatus
+    case networkFailure
+    case redirectRejected
+    case responseTooLarge
+    case malformedResponse
+    case quotaMissing
+}
+
+enum GLMRefreshStatus: Sendable, Equatable {
+    case idle
+    case checking
+    case live(fetchedAt: Date)
+    case failed(GLMErrorKind)
+}
+
 @MainActor @Observable
 final class QuotaStore {
     private(set) var providers: [ProviderUsage] = []
@@ -42,8 +65,10 @@ final class QuotaStore {
     private(set) var locationStatusKey: String?
     private(set) var codexResetCredits: CodexResetCredits?
     private(set) var deepSeekStatus: DeepSeekRefreshStatus = .idle
+    private(set) var glmStatus: GLMRefreshStatus = .idle
 
     let deepSeekCredentials: DeepSeekCredentialManager
+    let glmCredentials: GLMCredentialManager
     private let client: OpenUsageClient
     private let weatherClient: WeatherClient
     private let locationClient: LocationClient
@@ -51,6 +76,7 @@ final class QuotaStore {
     private let claudeDirectClient: ClaudeDirectClient
     private let kimiDirectClient = KimiDirectClient()
     private let deepSeekClient: any DeepSeekUsageClient
+    private let glmClient: any GLMUsageClient
     private let now: @Sendable () -> Date
     private let logger = Logger(subsystem: "com.cmsjcm.QuotaDot", category: "quota")
     private var activityTask: Task<Void, Never>?
@@ -64,6 +90,11 @@ final class QuotaStore {
     private var pendingDeepSeekAPIKey: String?
     private var suppressStoredDeepSeekCredential = false
     private var deepSeekGeneration: UInt64 = 0
+    private var glmTask: Task<Void, Never>?
+    private var glmTaskID: UUID?
+    private var pendingGLMAPIKey: String?
+    private var suppressStoredGLMCredential = false
+    private var glmGeneration: UInt64 = 0
     private var activeRefreshCount = 0
     private var directCodexAvailable = false
     private var directClaudeAvailable = false
@@ -72,6 +103,8 @@ final class QuotaStore {
     init(
         deepSeekCredentials: DeepSeekCredentialManager = DeepSeekCredentialManager(),
         deepSeekClient: any DeepSeekUsageClient = DeepSeekDirectClient(),
+        glmCredentials: GLMCredentialManager = GLMCredentialManager(),
+        glmClient: any GLMUsageClient = GLMDirectClient(),
         client: OpenUsageClient = OpenUsageClient(),
         weatherClient: WeatherClient = WeatherClient(),
         locationClient: LocationClient = LocationClient(),
@@ -81,6 +114,8 @@ final class QuotaStore {
     ) {
         self.deepSeekCredentials = deepSeekCredentials
         self.deepSeekClient = deepSeekClient
+        self.glmCredentials = glmCredentials
+        self.glmClient = glmClient
         self.client = client
         self.weatherClient = weatherClient
         self.locationClient = locationClient
@@ -102,6 +137,8 @@ final class QuotaStore {
     var hasQuotaProviders: Bool { providers.contains { $0.balance == nil } }
     var deepSeekProvider: ProviderUsage? { providers.first { $0.providerId.lowercased() == "deepseek" } }
     var hasPendingDeepSeekCredential: Bool { pendingDeepSeekAPIKey != nil }
+    var glmProvider: ProviderUsage? { providers.first { $0.providerId.lowercased() == "glm" } }
+    var hasPendingGLMCredential: Bool { pendingGLMAPIKey != nil }
 
     func start() async {
         activityTask = Task { await monitorLocalActivity() }
@@ -114,6 +151,7 @@ final class QuotaStore {
             claudeTask?.cancel()
             kimiTask?.cancel()
             deepSeekTask?.cancel()
+            glmTask?.cancel()
         }
         await refresh()
         while !Task.isCancelled {
@@ -157,6 +195,50 @@ final class QuotaStore {
         launchClaudeRefresh()
         launchKimiRefresh()
         launchDeepSeekRefresh()
+        launchGLMRefresh()
+    }
+
+    func refreshGLM() {
+        errorMessageKey = nil
+        launchGLMRefresh()
+    }
+
+    /// Validates the pasted key against GLM first. The key is persisted to
+    /// Keychain only after the official quota request succeeds.
+    @discardableResult
+    func connectGLM(apiKey candidate: String) -> Bool {
+        guard let apiKey = try? GLMDirectClient.validatedAPIKey(candidate) else { return false }
+        resetGLMConnection(status: .checking)
+        pendingGLMAPIKey = apiKey
+        suppressStoredGLMCredential = false
+        launchGLMRefresh(apiKey: apiKey, saveAfterSuccess: true)
+        return true
+    }
+
+    @discardableResult
+    func disconnectGLM() -> Bool {
+        pendingGLMAPIKey = nil
+        resetGLMConnection(status: .idle)
+        do {
+            try glmCredentials.deleteAPIKey()
+            suppressStoredGLMCredential = false
+            return true
+        } catch {
+            // Never reload a credential that the user asked us to remove.
+            suppressStoredGLMCredential = true
+            glmStatus = .failed(.credentialStoreFailure)
+            return false
+        }
+    }
+
+    private func resetGLMConnection(status: GLMRefreshStatus) {
+        glmGeneration &+= 1
+        glmTask?.cancel()
+        glmTask = nil
+        glmTaskID = nil
+        removeGLMProvider()
+        errorMessageKey = nil
+        glmStatus = status
     }
 
     func refreshDeepSeek() {
@@ -344,6 +426,83 @@ final class QuotaStore {
         }
     }
 
+    private func launchGLMRefresh(apiKey suppliedAPIKey: String? = nil, saveAfterSuccess: Bool = false) {
+        guard glmTask == nil else { return }
+        let apiKey: String
+        let shouldSaveAfterSuccess: Bool
+        if let suppliedAPIKey {
+            apiKey = suppliedAPIKey
+            shouldSaveAfterSuccess = saveAfterSuccess
+        } else if let pendingGLMAPIKey {
+            apiKey = pendingGLMAPIKey
+            shouldSaveAfterSuccess = true
+        } else {
+            guard !suppressStoredGLMCredential else {
+                glmStatus = .failed(.credentialStoreFailure)
+                return
+            }
+            do {
+                guard let stored = try glmCredentials.loadAPIKey() else {
+                    applyGLMFailure(.keyMissing)
+                    return
+                }
+                apiKey = stored
+                shouldSaveAfterSuccess = false
+            } catch {
+                applyGLMFailure(.credentialStoreFailure)
+                return
+            }
+        }
+        let client = glmClient
+        let generation = glmGeneration
+        let taskID = UUID()
+        glmTaskID = taskID
+        if glmProvider == nil {
+            errorMessageKey = nil
+            glmStatus = .checking
+        }
+        refreshStarted()
+        glmTask = Task { [weak self] in
+            let result: Result<ProviderUsage, GLMErrorKind>
+            do {
+                result = .success(try await client.fetch(apiKey: apiKey))
+            } catch is CancellationError {
+                result = .failure(.networkFailure)
+            } catch let error as GLMClientError {
+                result = .failure(Self.mapGLMError(error))
+            } catch {
+                result = .failure(.networkFailure)
+            }
+            guard let self else { return }
+            let current = generation == self.glmGeneration && taskID == self.glmTaskID
+            if current, !Task.isCancelled {
+                switch result {
+                case let .success(provider):
+                    if shouldSaveAfterSuccess {
+                        do {
+                            try self.glmCredentials.saveAPIKey(apiKey)
+                            self.pendingGLMAPIKey = nil
+                            self.suppressStoredGLMCredential = false
+                            self.applyGLM(provider)
+                        } catch {
+                            self.removeGLMProvider()
+                            self.glmStatus = .failed(.credentialStoreFailure)
+                        }
+                    } else {
+                        self.applyGLM(provider)
+                    }
+                case let .failure(error):
+                    self.applyGLMFailure(error)
+                }
+            }
+            if current {
+                self.glmTask = nil
+                self.glmTaskID = nil
+            }
+            self.refreshFinished()
+        }
+    }
+
     private func applyOpenUsage(_ result: [ProviderUsage]?) {
         guard let result else {
             logger.info("OpenUsage refresh failed")
@@ -495,6 +654,64 @@ final class QuotaStore {
         providers.removeAll { $0.providerId.caseInsensitiveCompare("deepseek") == .orderedSame }
     }
 
+    private func applyGLM(_ provider: ProviderUsage) {
+        var fresh = providers
+        replace(provider, in: &fresh)
+        commit(fresh)
+        glmStatus = .live(fetchedAt: provider.fetchedAt ?? now())
+        logger.info("GLM direct refresh succeeded")
+    }
+
+    private func applyGLMFailure(_ error: GLMErrorKind) {
+        logger.info("GLM direct refresh failed: \(String(describing: error), privacy: .public)")
+        switch error {
+        case .unauthorized:
+            removeGLMProvider()
+            pendingGLMAPIKey = nil
+            // Suppress the rejected credential before touching Keychain so a
+            // deletion failure cannot cause periodic refreshes to resend it.
+            suppressStoredGLMCredential = true
+            do {
+                try glmCredentials.deleteAPIKey()
+                suppressStoredGLMCredential = false
+                glmStatus = .failed(error)
+            } catch {
+                glmStatus = .failed(.credentialStoreFailure)
+            }
+        case .keyMissing, .invalidLocalKey, .credentialStoreFailure, .clientRejected:
+            removeGLMProvider()
+            glmStatus = .failed(error)
+        case .networkFailure, .rateLimited, .serverUnavailable,
+             .unexpectedHTTPStatus, .redirectRejected, .responseTooLarge,
+             .malformedResponse, .quotaMissing:
+            // Quota providers keep the last good data on transient failures,
+            // matching the Claude/Kimi behavior; no contract cache is kept.
+            glmStatus = .failed(error)
+        }
+        setFailureMessageIfNeeded()
+    }
+
+    private func removeGLMProvider() {
+        providers.removeAll { $0.providerId.caseInsensitiveCompare("glm") == .orderedSame }
+    }
+
+    private nonisolated static func mapGLMError(_ error: GLMClientError) -> GLMErrorKind {
+        switch error {
+        case .keyMissing: .keyMissing
+        case .invalidLocalKey: .invalidLocalKey
+        case .unauthorized: .unauthorized
+        case .clientRejected: .clientRejected
+        case .rateLimited: .rateLimited
+        case .serverUnavailable: .serverUnavailable
+        case .unexpectedHTTPStatus: .unexpectedHTTPStatus
+        case .networkFailure: .networkFailure
+        case .redirectRejected: .redirectRejected
+        case .responseTooLarge: .responseTooLarge
+        case .malformedResponse: .malformedResponse
+        case .quotaMissing: .quotaMissing
+        }
+    }
+
     private nonisolated static func mapDeepSeekError(_ error: DeepSeekClientError) -> DeepSeekErrorKind {
         switch error {
         case .keyMissing: .keyMissing
@@ -539,8 +756,9 @@ final class QuotaStore {
         case "codex": 0
         case "claude": 1
         case "kimi": 2
-        case "deepseek": 3
-        default: 4
+        case "glm": 3
+        case "deepseek": 4
+        default: 5
         }
     }
 
