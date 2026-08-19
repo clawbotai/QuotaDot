@@ -85,14 +85,6 @@ final class FloatingWindowController: NSObject {
         }
     }
 
-    func expandAndShow() {
-        settings.isEnabled = true
-        show()
-        setCompact(false)
-        if let panel { synchronizePanelSize(panel) }
-        panel?.orderFrontRegardless()
-    }
-
     func setEnabled(_ enabled: Bool) {
         settings.isEnabled = enabled
         if enabled {

@@ -11,7 +11,8 @@ struct QuotaDotApp: App {
                 store: appDelegate.store,
                 windowController: appDelegate.windowController,
                 language: appDelegate.language,
-                providerVisibility: appDelegate.providerVisibility
+                providerVisibility: appDelegate.providerVisibility,
+                floatingWindowSettings: appDelegate.floatingWindowSettings
             )
         } label: {
             HStack(spacing: 4) {
@@ -153,6 +154,7 @@ private struct MenuBarContent: View {
     let windowController: FloatingWindowController
     let language: LanguageSettings
     let providerVisibility: ProviderVisibilitySettings
+    let floatingWindowSettings: FloatingWindowSettings
 
     var body: some View {
         let visibleProviders = store.providers.filter(providerVisibility.isVisible)
@@ -170,7 +172,13 @@ private struct MenuBarContent: View {
                 NSApp.activate(ignoringOtherApps: true)
             }
         }
-        Button(language.text("menu.show")) { windowController.expandAndShow() }
+        Toggle(
+            language.text("menu.toggleFloatingWindow"),
+            isOn: Binding(
+                get: { floatingWindowSettings.isEnabled },
+                set: { windowController.setEnabled($0) }
+            )
+        )
         Button(language.text("menu.refresh")) { Task { await store.refresh() } }
         SettingsLink { Text(language.text("menu.settings")) }
         Divider()
