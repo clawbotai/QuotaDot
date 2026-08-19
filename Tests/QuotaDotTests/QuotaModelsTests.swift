@@ -22,6 +22,24 @@ struct QuotaModelsTests {
         #expect(QuotaHealth(remaining: 0.10) == .critical)
     }
 
+    @Test func displayRemainingPrefersLiveSessionOverWeekly() {
+        func quotaProvider(sessionUsed: Double?, weeklyUsed: Double?) -> ProviderUsage {
+            var lines: [UsageLine] = []
+            if let sessionUsed {
+                lines.append(UsageLine(type: "progress", label: "Session", used: sessionUsed, limit: 100, resetsAt: nil, periodDurationMs: 18_000_000, value: nil, subtitle: nil))
+            }
+            if let weeklyUsed {
+                lines.append(UsageLine(type: "progress", label: "Weekly", used: weeklyUsed, limit: 100, resetsAt: nil, periodDurationMs: 604_800_000, value: nil, subtitle: nil))
+            }
+            return ProviderUsage(providerId: "codex", displayName: "Codex", plan: nil, lines: lines, fetchedAt: nil)
+        }
+
+        #expect(quotaProvider(sessionUsed: 25, weeklyUsed: 50).displayRemainingPercent == 0.75)
+        #expect(quotaProvider(sessionUsed: 100, weeklyUsed: 50).displayRemainingPercent == 0.5)
+        #expect(quotaProvider(sessionUsed: nil, weeklyUsed: 50).displayRemainingPercent == 0.5)
+        #expect(quotaProvider(sessionUsed: 25, weeklyUsed: nil).displayRemainingPercent == 0.75)
+    }
+
     @Test func creditsRemainCreditsAndAreNotResetOpportunities() throws {
         let json = #"[{"providerId":"codex","displayName":"Codex","lines":[{"type":"progress","label":"Credits","used":1000,"limit":1000}]}]"#.data(using: .utf8)!
         let result = try JSONDecoder().decode([ProviderUsage].self, from: json)

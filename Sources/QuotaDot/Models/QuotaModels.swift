@@ -63,6 +63,13 @@ struct ProviderUsage: Decodable, Identifiable, Sendable {
         return progress(named: ["weekly", "week", "seven day", "spark"])
     }
     var credits: UsageLine? { progress(named: ["credits", "reset", "resets"]) }
+    /// Summary percentage shown in the menu bar, floating header, and compact
+    /// badges: the 5-hour window leads while it still has room; the weekly
+    /// quota takes over once the session is exhausted or unavailable.
+    var displayRemainingPercent: Double? {
+        if let session = session?.remainingPercent, session > 0 { return session }
+        return weekly?.remainingPercent ?? session?.remainingPercent
+    }
     func effectiveResetAt(for line: UsageLine) -> Date? {
         guard let reset = line.resetsAt else { return nil }
         if rawSession?.id == line.id, isReclassifiedWeekly(line) { return reset }

@@ -22,7 +22,7 @@ struct QuotaDotApp: App {
                         Text(QuotaFormatters.compactCNY(balance.toppedUp))
                     } else {
                         MenuBarQuotaGlyph()
-                        Text(QuotaFormatters.percent(lowestRemaining(for: provider)))
+                        Text(QuotaFormatters.percent(displayRemaining(for: provider)))
                     }
                 } else {
                     MenuBarQuotaGlyph()
@@ -72,10 +72,8 @@ struct QuotaDotApp: App {
         appDelegate.menuBarProviderSettings.provider(from: visibleProviders)
     }
 
-    private func lowestRemaining(for provider: ProviderUsage) -> Double? {
-        [provider.session?.remainingPercent, provider.weekly?.remainingPercent]
-            .compactMap { $0 }
-            .min()
+    private func displayRemaining(for provider: ProviderUsage) -> Double? {
+        provider.displayRemainingPercent
     }
 
     private var menuBarAccessibilityText: String {
@@ -85,7 +83,7 @@ struct QuotaDotApp: App {
         if let balance = provider.balance {
             return "\(provider.displayName), \(QuotaFormatters.cny(balance.toppedUp))"
         }
-        guard let remaining = lowestRemaining(for: provider) else {
+        guard let remaining = displayRemaining(for: provider) else {
             return appDelegate.language.text("menuBar.accessibility.loading")
         }
         return "\(provider.displayName), " + appDelegate.language.text(

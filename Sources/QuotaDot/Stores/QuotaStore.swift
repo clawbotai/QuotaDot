@@ -132,6 +132,7 @@ final class QuotaStore {
     var lowestRemaining: Double? {
         providers.flatMap { [$0.session?.remainingPercent, $0.weekly?.remainingPercent] }.compactMap { $0 }.min()
     }
+    var displayRemaining: Double? { providers.compactMap(\.displayRemainingPercent).min() }
 
     var health: QuotaHealth { QuotaHealth(remaining: lowestRemaining) }
     var hasQuotaProviders: Bool { providers.contains { $0.balance == nil } }

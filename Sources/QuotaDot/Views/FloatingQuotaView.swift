@@ -40,7 +40,7 @@ struct FloatingQuotaView: View {
             ForEach(visibleProviders) { provider in
                 CompactProviderBadge(
                     provider: provider,
-                    remaining: providerLowest(provider),
+                    remaining: provider.displayRemainingPercent,
                     active: provider.balance == nil && activeProviderIds.contains(provider.id),
                     status: provider.providerId.lowercased() == "deepseek" ? store.deepSeekStatus : .idle,
                     language: language
@@ -140,7 +140,7 @@ struct FloatingQuotaView: View {
             }
             Spacer()
             if store.hasQuotaProviders {
-                Text(QuotaFormatters.percent(store.lowestRemaining))
+                Text(QuotaFormatters.percent(store.displayRemaining))
                     .font(.system(size: 20, weight: .semibold, design: .rounded))
                     .monospacedDigit()
             }
@@ -209,7 +209,6 @@ struct FloatingQuotaView: View {
     }
 
     private var compactWidth: CGFloat { QuotaWindowMetrics.compactWidth(providerCount: visibleProviders.count) }
-    private func providerLowest(_ provider: ProviderUsage) -> Double? { [provider.session?.remainingPercent, provider.weekly?.remainingPercent].compactMap { $0 }.min() }
 }
 
 private struct CompactProviderBadge: View {
