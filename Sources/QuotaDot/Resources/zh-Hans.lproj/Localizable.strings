@@ -171,3 +171,26 @@
 "glm.status.rateLimited" = "GLM 暂时限制请求";
 "glm.status.network" = "暂时无法连接 GLM";
 "glm.status.contract" = "GLM 用量响应暂不可用";
+
+"minimax.settings.section" = "MiniMax Token Plan";
+"minimax.settings.status" = "状态";
+"minimax.settings.apiKey" = "粘贴 MiniMax API Key";
+"minimax.settings.getKey" = "获取 API Key";
+"minimax.settings.connect" = "连接";
+"minimax.settings.retry" = "重新验证";
+"minimax.settings.disconnect" = "断开连接";
+"minimax.settings.privacy" = "API Key 先通过 MiniMax 官方套餐用量接口验证，成功后才保存到此 Mac 的钥匙串；QuotaDot 不会把 Key 写入偏好设置或日志。";
+"minimax.settings.invalidKey" = "请输入有效的 MiniMax API Key。";
+"minimax.settings.keychainFailed" = "无法访问 macOS 钥匙串，请稍后重试。";
+"minimax.status.notConnected" = "未连接";
+"minimax.status.idle" = "等待验证";
+"minimax.status.checking" = "正在验证 API Key 并读取套餐用量";
+"minimax.status.live" = "已连接，套餐用量已读取";
+"minimax.status.invalidKey" = "API Key 格式无效";
+"minimax.status.keychainFailed" = "无法安全保存或读取 API Key";
+"minimax.status.expired" = "连接已失效，请重新粘贴 API Key";
+"minimax.status.unauthorized" = "请求被 MiniMax 拒绝";
+"minimax.status.quotaMissing" = "未返回 MiniMax 套餐用量";
+"minimax.status.rateLimited" = "MiniMax 暂时限制请求";
+"minimax.status.network" = "暂时无法连接 MiniMax";
+"minimax.status.contract" = "MiniMax 用量响应暂不可用";

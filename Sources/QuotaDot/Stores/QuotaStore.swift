@@ -54,6 +54,29 @@ enum GLMRefreshStatus: Sendable, Equatable {
     case failed(GLMErrorKind)
 }
 
+enum MiniMaxErrorKind: Error, Sendable, Equatable {
+    case keyMissing
+    case invalidLocalKey
+    case credentialStoreFailure
+    case unauthorized
+    case clientRejected
+    case rateLimited
+    case serverUnavailable
+    case unexpectedHTTPStatus
+    case networkFailure
+    case redirectRejected
+    case responseTooLarge
+    case malformedResponse
+    case quotaMissing
+}
+
+enum MiniMaxRefreshStatus: Sendable, Equatable {
+    case idle
+    case checking
+    case live(fetchedAt: Date)
+    case failed(MiniMaxErrorKind)
+}
+
 @MainActor @Observable
 final class QuotaStore {
     private(set) var providers: [ProviderUsage] = []
@@ -66,9 +89,11 @@ final class QuotaStore {
     private(set) var codexResetCredits: CodexResetCredits?
     private(set) var deepSeekStatus: DeepSeekRefreshStatus = .idle
     private(set) var glmStatus: GLMRefreshStatus = .idle
+    private(set) var miniMaxStatus: MiniMaxRefreshStatus = .idle
 
     let deepSeekCredentials: DeepSeekCredentialManager
     let glmCredentials: GLMCredentialManager
+    let miniMaxCredentials: MiniMaxCredentialManager
     private let client: OpenUsageClient
     private let weatherClient: WeatherClient
     private let locationClient: LocationClient
@@ -77,6 +102,7 @@ final class QuotaStore {
     private let kimiDirectClient = KimiDirectClient()
     private let deepSeekClient: any DeepSeekUsageClient
     private let glmClient: any GLMUsageClient
+    private let miniMaxClient: any MiniMaxUsageClient
     private let now: @Sendable () -> Date
     private let logger = Logger(subsystem: "com.cmsjcm.QuotaDot", category: "quota")
     private var activityTask: Task<Void, Never>?
@@ -95,6 +121,11 @@ final class QuotaStore {
     private var pendingGLMAPIKey: String?
     private var suppressStoredGLMCredential = false
     private var glmGeneration: UInt64 = 0
+    private var miniMaxTask: Task<Void, Never>?
+    private var miniMaxTaskID: UUID?
+    private var pendingMiniMaxAPIKey: String?
+    private var suppressStoredMiniMaxCredential = false
+    private var miniMaxGeneration: UInt64 = 0
     private var activeRefreshCount = 0
     private var directCodexAvailable = false
     private var directClaudeAvailable = false
@@ -105,6 +136,8 @@ final class QuotaStore {
         deepSeekClient: any DeepSeekUsageClient = DeepSeekDirectClient(),
         glmCredentials: GLMCredentialManager = GLMCredentialManager(),
         glmClient: any GLMUsageClient = GLMDirectClient(),
+        miniMaxCredentials: MiniMaxCredentialManager = MiniMaxCredentialManager(),
+        miniMaxClient: any MiniMaxUsageClient = MiniMaxDirectClient(),
         client: OpenUsageClient = OpenUsageClient(),
         weatherClient: WeatherClient = WeatherClient(),
         locationClient: LocationClient = LocationClient(),
@@ -116,6 +149,8 @@ final class QuotaStore {
         self.deepSeekClient = deepSeekClient
         self.glmCredentials = glmCredentials
         self.glmClient = glmClient
+        self.miniMaxCredentials = miniMaxCredentials
+        self.miniMaxClient = miniMaxClient
         self.client = client
         self.weatherClient = weatherClient
         self.locationClient = locationClient
@@ -140,6 +175,8 @@ final class QuotaStore {
     var hasPendingDeepSeekCredential: Bool { pendingDeepSeekAPIKey != nil }
     var glmProvider: ProviderUsage? { providers.first { $0.providerId.lowercased() == "glm" } }
     var hasPendingGLMCredential: Bool { pendingGLMAPIKey != nil }
+    var miniMaxProvider: ProviderUsage? { providers.first { $0.providerId.lowercased() == "minimax" } }
+    var hasPendingMiniMaxCredential: Bool { pendingMiniMaxAPIKey != nil }
 
     func start() async {
         activityTask = Task { await monitorLocalActivity() }
@@ -153,6 +190,7 @@ final class QuotaStore {
             kimiTask?.cancel()
             deepSeekTask?.cancel()
             glmTask?.cancel()
+            miniMaxTask?.cancel()
         }
         await refresh()
         while !Task.isCancelled {
@@ -197,11 +235,55 @@ final class QuotaStore {
         launchKimiRefresh()
         launchDeepSeekRefresh()
         launchGLMRefresh()
+        launchMiniMaxRefresh()
     }
 
     func refreshGLM() {
         errorMessageKey = nil
         launchGLMRefresh()
+    }
+
+    func refreshMiniMax() {
+        errorMessageKey = nil
+        launchMiniMaxRefresh()
+    }
+
+    /// Validates the pasted key against MiniMax first. The key is persisted to
+    /// Keychain only after the official quota request succeeds.
+    @discardableResult
+    func connectMiniMax(apiKey candidate: String) -> Bool {
+        guard let apiKey = try? MiniMaxDirectClient.validatedAPIKey(candidate) else { return false }
+        resetMiniMaxConnection(status: .checking)
+        pendingMiniMaxAPIKey = apiKey
+        suppressStoredMiniMaxCredential = false
+        launchMiniMaxRefresh(apiKey: apiKey, saveAfterSuccess: true)
+        return true
+    }
+
+    @discardableResult
+    func disconnectMiniMax() -> Bool {
+        pendingMiniMaxAPIKey = nil
+        resetMiniMaxConnection(status: .idle)
+        do {
+            try miniMaxCredentials.deleteAPIKey()
+            suppressStoredMiniMaxCredential = false
+            return true
+        } catch {
+            // Never reload a credential that the user asked us to remove.
+            suppressStoredMiniMaxCredential = true
+            miniMaxStatus = .failed(.credentialStoreFailure)
+            return false
+        }
+    }
+
+    private func resetMiniMaxConnection(status: MiniMaxRefreshStatus) {
+        miniMaxGeneration &+= 1
+        miniMaxTask?.cancel()
+        miniMaxTask = nil
+        miniMaxTaskID = nil
+        removeMiniMaxProvider()
+        errorMessageKey = nil
+        miniMaxStatus = status
     }
 
     /// Validates the pasted key against GLM first. The key is persisted to
@@ -504,6 +586,83 @@ final class QuotaStore {
         }
     }
 
+    private func launchMiniMaxRefresh(apiKey suppliedAPIKey: String? = nil, saveAfterSuccess: Bool = false) {
+        guard miniMaxTask == nil else { return }
+        let apiKey: String
+        let shouldSaveAfterSuccess: Bool
+        if let suppliedAPIKey {
+            apiKey = suppliedAPIKey
+            shouldSaveAfterSuccess = saveAfterSuccess
+        } else if let pendingMiniMaxAPIKey {
+            apiKey = pendingMiniMaxAPIKey
+            shouldSaveAfterSuccess = true
+        } else {
+            guard !suppressStoredMiniMaxCredential else {
+                miniMaxStatus = .failed(.credentialStoreFailure)
+                return
+            }
+            do {
+                guard let stored = try miniMaxCredentials.loadAPIKey() else {
+                    applyMiniMaxFailure(.keyMissing)
+                    return
+                }
+                apiKey = stored
+                shouldSaveAfterSuccess = false
+            } catch {
+                applyMiniMaxFailure(.credentialStoreFailure)
+                return
+            }
+        }
+        let client = miniMaxClient
+        let generation = miniMaxGeneration
+        let taskID = UUID()
+        miniMaxTaskID = taskID
+        if miniMaxProvider == nil {
+            errorMessageKey = nil
+            miniMaxStatus = .checking
+        }
+        refreshStarted()
+        miniMaxTask = Task { [weak self] in
+            let result: Result<ProviderUsage, MiniMaxErrorKind>
+            do {
+                result = .success(try await client.fetch(apiKey: apiKey))
+            } catch is CancellationError {
+                result = .failure(.networkFailure)
+            } catch let error as MiniMaxClientError {
+                result = .failure(Self.mapMiniMaxError(error))
+            } catch {
+                result = .failure(.networkFailure)
+            }
+            guard let self else { return }
+            let current = generation == self.miniMaxGeneration && taskID == self.miniMaxTaskID
+            if current, !Task.isCancelled {
+                switch result {
+                case let .success(provider):
+                    if shouldSaveAfterSuccess {
+                        do {
+                            try self.miniMaxCredentials.saveAPIKey(apiKey)
+                            self.pendingMiniMaxAPIKey = nil
+                            self.suppressStoredMiniMaxCredential = false
+                            self.applyMiniMax(provider)
+                        } catch {
+                            self.removeMiniMaxProvider()
+                            self.miniMaxStatus = .failed(.credentialStoreFailure)
+                        }
+                    } else {
+                        self.applyMiniMax(provider)
+                    }
+                case let .failure(error):
+                    self.applyMiniMaxFailure(error)
+                }
+            }
+            if current {
+                self.miniMaxTask = nil
+                self.miniMaxTaskID = nil
+            }
+            self.refreshFinished()
+        }
+    }
+
     private func applyOpenUsage(_ result: [ProviderUsage]?) {
         guard let result else {
             logger.info("OpenUsage refresh failed")
@@ -696,6 +855,64 @@ final class QuotaStore {
         providers.removeAll { $0.providerId.caseInsensitiveCompare("glm") == .orderedSame }
     }
 
+    private func applyMiniMax(_ provider: ProviderUsage) {
+        var fresh = providers
+        replace(provider, in: &fresh)
+        commit(fresh)
+        miniMaxStatus = .live(fetchedAt: provider.fetchedAt ?? now())
+        logger.info("MiniMax direct refresh succeeded")
+    }
+
+    private func applyMiniMaxFailure(_ error: MiniMaxErrorKind) {
+        logger.info("MiniMax direct refresh failed: \(String(describing: error), privacy: .public)")
+        switch error {
+        case .unauthorized:
+            removeMiniMaxProvider()
+            pendingMiniMaxAPIKey = nil
+            // Suppress the rejected credential before touching Keychain so a
+            // deletion failure cannot cause periodic refreshes to resend it.
+            suppressStoredMiniMaxCredential = true
+            do {
+                try miniMaxCredentials.deleteAPIKey()
+                suppressStoredMiniMaxCredential = false
+                miniMaxStatus = .failed(error)
+            } catch {
+                miniMaxStatus = .failed(.credentialStoreFailure)
+            }
+        case .keyMissing, .invalidLocalKey, .credentialStoreFailure, .clientRejected:
+            removeMiniMaxProvider()
+            miniMaxStatus = .failed(error)
+        case .networkFailure, .rateLimited, .serverUnavailable,
+             .unexpectedHTTPStatus, .redirectRejected, .responseTooLarge,
+             .malformedResponse, .quotaMissing:
+            // Quota providers keep the last good data on transient failures,
+            // matching the Claude/Kimi/GLM behavior; no contract cache is kept.
+            miniMaxStatus = .failed(error)
+        }
+        setFailureMessageIfNeeded()
+    }
+
+    private func removeMiniMaxProvider() {
+        providers.removeAll { $0.providerId.caseInsensitiveCompare("minimax") == .orderedSame }
+    }
+
+    private nonisolated static func mapMiniMaxError(_ error: MiniMaxClientError) -> MiniMaxErrorKind {
+        switch error {
+        case .keyMissing: .keyMissing
+        case .invalidLocalKey: .invalidLocalKey
+        case .unauthorized: .unauthorized
+        case .clientRejected: .clientRejected
+        case .rateLimited: .rateLimited
+        case .serverUnavailable: .serverUnavailable
+        case .unexpectedHTTPStatus: .unexpectedHTTPStatus
+        case .networkFailure: .networkFailure
+        case .redirectRejected: .redirectRejected
+        case .responseTooLarge: .responseTooLarge
+        case .malformedResponse: .malformedResponse
+        case .quotaMissing: .quotaMissing
+        }
+    }
+
     private nonisolated static func mapGLMError(_ error: GLMClientError) -> GLMErrorKind {
         switch error {
         case .keyMissing: .keyMissing
@@ -758,8 +975,9 @@ final class QuotaStore {
         case "claude": 1
         case "kimi": 2
         case "glm": 3
-        case "deepseek": 4
-        default: 5
+        case "minimax": 4
+        case "deepseek": 5
+        default: 6
         }
     }
 

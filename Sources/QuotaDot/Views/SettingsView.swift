@@ -6,6 +6,7 @@ struct SettingsView: View {
     let store: QuotaStore
     let deepSeekCredentials: DeepSeekCredentialManager
     let glmCredentials: GLMCredentialManager
+    let miniMaxCredentials: MiniMaxCredentialManager
     let floatingWindowSettings: FloatingWindowSettings
     let menuBarProviderSettings: MenuBarProviderSettings
     let providerVisibility: ProviderVisibilitySettings
@@ -13,8 +14,10 @@ struct SettingsView: View {
     @State private var loginItem = LoginItemManager()
     @State private var deepSeekDraft = ""
     @State private var glmDraft = ""
+    @State private var miniMaxDraft = ""
     @State private var validationMessageKey: String?
     @State private var glmValidationMessageKey: String?
+    @State private var miniMaxValidationMessageKey: String?
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -98,7 +101,7 @@ struct SettingsView: View {
             }
 
             Section(language.text("settings.data")) {
-                LabeledContent(language.text("settings.quotaSource"), value: "Codex + Claude + Kimi + GLM + DeepSeek Direct")
+                LabeledContent(language.text("settings.quotaSource"), value: "Codex + Claude + Kimi + GLM + MiniMax + DeepSeek Direct")
                 LabeledContent(language.text("settings.refreshRate"), value: language.text("settings.refreshRate.value"))
                 Text(language.text("settings.privacy"))
                     .font(.caption)
@@ -174,15 +177,52 @@ struct SettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+
+            Section(language.text("minimax.settings.section")) {
+                LabeledContent(language.text("minimax.settings.status")) {
+                    Label(miniMaxStatusText, systemImage: miniMaxStatusSymbol)
+                        .foregroundStyle(miniMaxStatusColor)
+                }
+
+                SecureField(language.text("minimax.settings.apiKey"), text: $miniMaxDraft)
+                    .textFieldStyle(.roundedBorder)
+                    .textContentType(.password)
+
+                if let miniMaxValidationMessageKey {
+                    Label(language.text(miniMaxValidationMessageKey), systemImage: "xmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+
+                HStack {
+                    Button(language.text("minimax.settings.getKey")) { openMiniMaxAPIKeys() }
+                    Button(language.text("minimax.settings.connect")) { connectMiniMax() }
+                        .disabled(miniMaxDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || store.isRefreshing)
+                    Button(language.text("minimax.settings.retry")) { store.refreshMiniMax() }
+                        .disabled(store.isRefreshing)
+                    Spacer()
+                    if miniMaxCredentials.hasStoredAPIKey || store.hasPendingMiniMaxCredential || store.miniMaxProvider != nil {
+                        Button(language.text("minimax.settings.disconnect"), role: .destructive) {
+                            disconnectMiniMax()
+                        }
+                    }
+                }
+
+                Text(language.text("minimax.settings.privacy"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
-        .frame(width: 540, height: 780)
+        .frame(width: 540, height: 880)
         .onAppear { loginItem.refresh() }
         .onDisappear {
             deepSeekDraft = ""
             glmDraft = ""
+            miniMaxDraft = ""
             validationMessageKey = nil
             glmValidationMessageKey = nil
+            miniMaxValidationMessageKey = nil
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { loginItem.refresh() }
@@ -287,6 +327,75 @@ struct SettingsView: View {
 
     private var glmStatusColor: Color {
         switch store.glmStatus {
+        case .live: .green
+        case .checking, .idle: .secondary
+        case .failed: .red
+        }
+    }
+
+    private func openMiniMaxAPIKeys() {
+        guard let url = URL(string: "https://platform.minimaxi.com/user-center/payment/token-plan") else { return }
+        NSWorkspace.shared.open(url)
+    }
+
+    private func connectMiniMax() {
+        guard store.connectMiniMax(apiKey: miniMaxDraft) else {
+            miniMaxValidationMessageKey = "minimax.settings.invalidKey"
+            miniMaxDraft = ""
+            return
+        }
+        miniMaxValidationMessageKey = nil
+        miniMaxDraft = ""
+    }
+
+    private func disconnectMiniMax() {
+        if !store.disconnectMiniMax() {
+            miniMaxValidationMessageKey = "minimax.settings.keychainFailed"
+        } else {
+            miniMaxValidationMessageKey = nil
+        }
+        miniMaxDraft = ""
+    }
+
+    private var miniMaxStatusText: String {
+        switch store.miniMaxStatus {
+        case .idle:
+            return language.text(miniMaxCredentials.hasStoredAPIKey ? "minimax.status.idle" : "minimax.status.notConnected")
+        case .checking:
+            return language.text("minimax.status.checking")
+        case .live:
+            return language.text("minimax.status.live")
+        case let .failed(error):
+            return language.text(miniMaxStatusKey(for: error))
+        }
+    }
+
+    private func miniMaxStatusKey(for error: MiniMaxErrorKind) -> String {
+        switch error {
+        case .keyMissing: "minimax.status.notConnected"
+        case .invalidLocalKey: "minimax.status.invalidKey"
+        case .credentialStoreFailure: "minimax.status.keychainFailed"
+        case .unauthorized: "minimax.status.expired"
+        case .clientRejected: "minimax.status.unauthorized"
+        case .quotaMissing: "minimax.status.quotaMissing"
+        case .rateLimited: "minimax.status.rateLimited"
+        case .serverUnavailable, .networkFailure: "minimax.status.network"
+        case .unexpectedHTTPStatus, .redirectRejected, .responseTooLarge, .malformedResponse:
+            "minimax.status.contract"
+        }
+    }
+
+    private var miniMaxStatusSymbol: String {
+        switch store.miniMaxStatus {
+        case .live: "checkmark.circle.fill"
+        case .checking: "arrow.triangle.2.circlepath"
+        case .failed: "exclamationmark.triangle.fill"
+        case .idle: "circle.dashed"
+        }
+    }
+
+    private var miniMaxStatusColor: Color {
+        switch store.miniMaxStatus {
         case .live: .green
         case .checking, .idle: .secondary
         case .failed: .red

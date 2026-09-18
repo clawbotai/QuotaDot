@@ -171,3 +171,26 @@
 "glm.status.rateLimited" = "GLM is temporarily rate limiting requests";
 "glm.status.network" = "GLM is temporarily unavailable";
 "glm.status.contract" = "GLM quota response is unavailable";
+
+"minimax.settings.section" = "MiniMax Token Plan";
+"minimax.settings.status" = "Status";
+"minimax.settings.apiKey" = "Paste MiniMax API key";
+"minimax.settings.getKey" = "Get API Key";
+"minimax.settings.connect" = "Connect";
+"minimax.settings.retry" = "Verify again";
+"minimax.settings.disconnect" = "Disconnect";
+"minimax.settings.privacy" = "The API key is verified with MiniMax's official coding-plan usage endpoint before it is stored in this Mac's Keychain. QuotaDot never writes it to preferences or logs.";
+"minimax.settings.invalidKey" = "Enter a valid MiniMax API key.";
+"minimax.settings.keychainFailed" = "macOS Keychain is unavailable. Try again.";
+"minimax.status.notConnected" = "Not connected";
+"minimax.status.idle" = "Waiting to verify";
+"minimax.status.checking" = "Verifying API key and reading plan usage";
+"minimax.status.live" = "Connected and plan usage loaded";
+"minimax.status.invalidKey" = "API key format is invalid";
+"minimax.status.keychainFailed" = "Unable to securely save or read the API key";
+"minimax.status.expired" = "Connection expired; paste the API key again";
+"minimax.status.unauthorized" = "MiniMax rejected the request";
+"minimax.status.quotaMissing" = "No MiniMax plan usage returned";
+"minimax.status.rateLimited" = "MiniMax is temporarily rate limiting requests";
+"minimax.status.network" = "MiniMax is temporarily unavailable";
+"minimax.status.contract" = "MiniMax usage response is unavailable";
