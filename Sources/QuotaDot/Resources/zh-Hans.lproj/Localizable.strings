@@ -194,3 +194,25 @@
 "minimax.status.rateLimited" = "MiniMax 暂时限制请求";
 "minimax.status.network" = "暂时无法连接 MiniMax";
 "minimax.status.contract" = "MiniMax 用量响应暂不可用";
+
+// Google Antigravity
+"antigravity.signIn" = "使用 Google 登录";
+"antigravity.refresh" = "刷新额度";
+"antigravity.cancel" = "取消";
+"antigravity.disconnect" = "断开连接";
+"antigravity.disconnected" = "尚未连接 Google 账号";
+"antigravity.connected" = "已连接，额度已更新";
+"antigravity.authorizing" = "请在浏览器中完成 Google 授权";
+"antigravity.refreshing" = "正在查询额度…";
+"antigravity.quotaUnavailable" = "已授权，但接口未返回可用额度";
+"antigravity.projectUnavailable" = "该账号未返回 Antigravity 项目，请先完成官方账号开通";
+"antigravity.unauthorized" = "授权已失效，请重新登录";
+"antigravity.forbidden" = "Google 拒绝额度访问，请检查账号权限";
+"antigravity.rateLimited" = "查询过于频繁，请稍后重试";
+"antigravity.denied" = "已取消 Google 授权";
+"antigravity.cancelled" = "操作已取消";
+"antigravity.timedOut" = "授权等待超时，请重新登录";
+"antigravity.keychainError" = "无法读取或保存钥匙串凭据";
+"antigravity.configurationMissing" = "缺少 Antigravity OAuth 客户端配置";
+"antigravity.failed" = "连接或响应异常，请重试";
+"antigravity.privacy" = "在浏览器中授权，凭据保存在本机钥匙串。仅向 Google 查询额度，不调用模型。各组显示组内最低剩余额度；接口不提供明确周期时不标记五小时或每周。";

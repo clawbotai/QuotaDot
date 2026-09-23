@@ -13,6 +13,9 @@ pet-runs/
 .env
 .env.*
 !.env.example
+*.xcconfig
+!*.xcconfig.example
+Antigravity.xcconfig
 auth.json
 .credentials.json
 *.p8

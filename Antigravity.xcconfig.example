@@ -1,0 +1,4 @@
+// Google Antigravity OAuth Build Configuration Template
+// Copy this file to Antigravity.xcconfig and configure your credentials.
+ANTIGRAVITY_CLIENT_ID = 
+ANTIGRAVITY_CLIENT_SECRET = 

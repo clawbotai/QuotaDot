@@ -194,3 +194,25 @@
 "minimax.status.rateLimited" = "MiniMax is temporarily rate limiting requests";
 "minimax.status.network" = "MiniMax is temporarily unavailable";
 "minimax.status.contract" = "MiniMax usage response is unavailable";
+
+// Google Antigravity
+"antigravity.signIn" = "Sign in with Google";
+"antigravity.refresh" = "Refresh quota";
+"antigravity.cancel" = "Cancel";
+"antigravity.disconnect" = "Disconnect";
+"antigravity.disconnected" = "No Google account connected";
+"antigravity.connected" = "Connected; quota updated";
+"antigravity.authorizing" = "Complete Google authorization in your browser";
+"antigravity.refreshing" = "Checking quota…";
+"antigravity.quotaUnavailable" = "Authorized, but quota data is unavailable";
+"antigravity.projectUnavailable" = "No Antigravity project returned; complete account setup with Google first";
+"antigravity.unauthorized" = "Authorization expired or revoked; sign in again";
+"antigravity.forbidden" = "Google denied quota access; check account permissions";
+"antigravity.rateLimited" = "Too many requests; try again later";
+"antigravity.denied" = "Google authorization denied";
+"antigravity.cancelled" = "Operation cancelled";
+"antigravity.timedOut" = "Authorization timed out; sign in again";
+"antigravity.keychainError" = "Could not read or save Keychain credentials";
+"antigravity.configurationMissing" = "Antigravity OAuth client configuration is missing";
+"antigravity.failed" = "Connection or response error; try again";
+"antigravity.privacy" = "Authorize in your browser; credentials stay in macOS Keychain. Only Google quota endpoints are queried; no model calls. Each group shows its lowest remaining quota; no session or weekly duration is assumed.";

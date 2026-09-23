@@ -195,6 +195,9 @@ private struct MenuBarContent: View {
             parts.append("\(language.text("balance.topUp")) \(QuotaFormatters.cny(balance.toppedUp))")
             if case .cached = store.deepSeekStatus { parts.append(language.text("balance.cached")) }
         }
+        if provider.providerId == "antigravity" {
+            parts += provider.lines.map { "\($0.label) \(QuotaFormatters.percent($0.remainingPercent))" }
+        }
         if let session = provider.session { parts.append("5h \(QuotaFormatters.percent(session.remainingPercent))") }
         if let weekly = provider.weekly {
             parts.append("\(language.text("menu.weekly.short")) \(QuotaFormatters.percent(weekly.remainingPercent))")

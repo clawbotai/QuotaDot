@@ -63,7 +63,7 @@ extension ProviderUsage {
     }
 
     var softPalette: [Color] {
-        let health = QuotaHealth(remaining: [session?.remainingPercent, weekly?.remainingPercent].compactMap { $0 }.min())
+        let health = QuotaHealth(remaining: lowestRemainingPercent)
         switch health {
         case .warning:
             return [Color(red: 1.00, green: 0.98, blue: 0.87), Color(red: 0.98, green: 0.93, blue: 0.78)]

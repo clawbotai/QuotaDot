@@ -101,9 +101,36 @@ struct SettingsView: View {
             }
 
             Section(language.text("settings.data")) {
-                LabeledContent(language.text("settings.quotaSource"), value: "Codex + Claude + Kimi + GLM + MiniMax + DeepSeek Direct")
+                LabeledContent(language.text("settings.quotaSource"), value: "Codex + Claude + Kimi + GLM + MiniMax + DeepSeek + Antigravity Direct")
                 LabeledContent(language.text("settings.refreshRate"), value: language.text("settings.refreshRate.value"))
                 Text(language.text("settings.privacy"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Google Antigravity") {
+                Text(language.text(store.antigravity.statusKey))
+                    .font(.caption)
+                HStack {
+                    Button(language.text("antigravity.signIn")) {
+                        Task { await store.antigravity.signIn() }
+                    }
+                    .disabled(store.antigravity.isBusy)
+                    Button(language.text("antigravity.refresh")) {
+                        Task { await store.antigravity.refresh() }
+                    }
+                    .disabled(store.antigravity.isBusy || !store.antigravity.hasCredential)
+                    if store.antigravity.isBusy {
+                        Button(language.text("antigravity.cancel")) { store.antigravity.cancelSignIn() }
+                    }
+                    Spacer()
+                    if store.antigravity.hasCredential {
+                        Button(language.text("antigravity.disconnect"), role: .destructive) {
+                            store.antigravity.disconnect()
+                        }
+                    }
+                }
+                Text(language.text("antigravity.privacy"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

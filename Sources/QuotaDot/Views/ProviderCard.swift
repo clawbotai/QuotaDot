@@ -21,10 +21,15 @@ struct ProviderCard: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                activityLabel
+                if provider.providerId != "antigravity" { activityLabel }
             }
 
             HStack(alignment: .center, spacing: 18) {
+                if provider.providerId == "antigravity" {
+                    ForEach(provider.lines) { line in
+                        metric(title: line.label, line: line, emphasized: provider.lines.count == 1)
+                    }
+                }
                 if let session = provider.session {
                     metric(title: language.text("quota.session"), line: session, emphasized: true)
                 }

@@ -79,10 +79,19 @@ enum MiniMaxRefreshStatus: Sendable, Equatable {
 
 @MainActor @Observable
 final class QuotaStore {
-    private(set) var providers: [ProviderUsage] = []
-    private(set) var lastUpdated: Date?
-    private(set) var errorMessageKey: String?
-    private(set) var isRefreshing = false
+    private var cachedProviders: [ProviderUsage] = []
+    let antigravity = AntigravityConnection()
+    var providers: [ProviderUsage] {
+        cachedProviders + (antigravity.provider.map { [$0] } ?? [])
+    }
+    private var cachedLastUpdated: Date?
+    var lastUpdated: Date? {
+        [cachedLastUpdated, antigravity.provider?.fetchedAt].compactMap { $0 }.max()
+    }
+    private var cachedErrorMessageKey: String?
+    var errorMessageKey: String? { antigravity.provider == nil ? cachedErrorMessageKey : nil }
+    private var otherProvidersRefreshing = false
+    var isRefreshing: Bool { otherProvidersRefreshing || antigravity.isBusy }
     private(set) var activeProviderIds: Set<String> = []
     private(set) var weather: WeatherSnapshot?
     private(set) var locationStatusKey: String?
@@ -111,6 +120,7 @@ final class QuotaStore {
     private var codexTask: Task<Void, Never>?
     private var claudeTask: Task<Void, Never>?
     private var kimiTask: Task<Void, Never>?
+    private var antigravityTask: Task<Void, Never>?
     private var deepSeekTask: Task<Void, Never>?
     private var deepSeekTaskID: UUID?
     private var pendingDeepSeekAPIKey: String?
@@ -165,7 +175,7 @@ final class QuotaStore {
     }
 
     var lowestRemaining: Double? {
-        providers.flatMap { [$0.session?.remainingPercent, $0.weekly?.remainingPercent] }.compactMap { $0 }.min()
+        providers.compactMap(\.lowestRemainingPercent).min()
     }
     var displayRemaining: Double? { providers.compactMap(\.displayRemainingPercent).min() }
 
@@ -188,6 +198,7 @@ final class QuotaStore {
             codexTask?.cancel()
             claudeTask?.cancel()
             kimiTask?.cancel()
+            antigravityTask?.cancel()
             deepSeekTask?.cancel()
             glmTask?.cancel()
             miniMaxTask?.cancel()
@@ -236,15 +247,22 @@ final class QuotaStore {
         launchDeepSeekRefresh()
         launchGLMRefresh()
         launchMiniMaxRefresh()
+        if antigravityTask == nil {
+            antigravityTask = Task { [weak self] in
+                guard let self else { return }
+                await self.antigravity.refresh()
+                self.antigravityTask = nil
+            }
+        }
     }
 
     func refreshGLM() {
-        errorMessageKey = nil
+        cachedErrorMessageKey = nil
         launchGLMRefresh()
     }
 
     func refreshMiniMax() {
-        errorMessageKey = nil
+        cachedErrorMessageKey = nil
         launchMiniMaxRefresh()
     }
 
@@ -282,7 +300,7 @@ final class QuotaStore {
         miniMaxTask = nil
         miniMaxTaskID = nil
         removeMiniMaxProvider()
-        errorMessageKey = nil
+        cachedErrorMessageKey = nil
         miniMaxStatus = status
     }
 
@@ -320,12 +338,12 @@ final class QuotaStore {
         glmTask = nil
         glmTaskID = nil
         removeGLMProvider()
-        errorMessageKey = nil
+        cachedErrorMessageKey = nil
         glmStatus = status
     }
 
     func refreshDeepSeek() {
-        errorMessageKey = nil
+        cachedErrorMessageKey = nil
         launchDeepSeekRefresh()
     }
 
@@ -363,18 +381,18 @@ final class QuotaStore {
         deepSeekTask = nil
         deepSeekTaskID = nil
         removeDeepSeekProvider()
-        errorMessageKey = nil
+        cachedErrorMessageKey = nil
         deepSeekStatus = status
     }
 
     private func refreshStarted() {
         activeRefreshCount += 1
-        isRefreshing = true
+        otherProvidersRefreshing = true
     }
 
     private func refreshFinished() {
         activeRefreshCount = max(activeRefreshCount - 1, 0)
-        isRefreshing = activeRefreshCount > 0
+        otherProvidersRefreshing = activeRefreshCount > 0
     }
 
     private func launchOpenUsageRefresh() {
@@ -464,7 +482,7 @@ final class QuotaStore {
         let taskID = UUID()
         deepSeekTaskID = taskID
         if deepSeekProvider == nil {
-            errorMessageKey = nil
+            cachedErrorMessageKey = nil
             deepSeekStatus = .checking
         }
         refreshStarted()
@@ -541,7 +559,7 @@ final class QuotaStore {
         let taskID = UUID()
         glmTaskID = taskID
         if glmProvider == nil {
-            errorMessageKey = nil
+            cachedErrorMessageKey = nil
             glmStatus = .checking
         }
         refreshStarted()
@@ -618,7 +636,7 @@ final class QuotaStore {
         let taskID = UUID()
         miniMaxTaskID = taskID
         if miniMaxProvider == nil {
-            errorMessageKey = nil
+            cachedErrorMessageKey = nil
             miniMaxStatus = .checking
         }
         refreshStarted()
@@ -670,7 +688,7 @@ final class QuotaStore {
             return
         }
 
-        var fresh = providers
+        var fresh = cachedProviders
         for provider in result {
             let providerId = provider.providerId.lowercased()
             if providerId == "codex", directCodexAvailable { continue }
@@ -690,7 +708,7 @@ final class QuotaStore {
         }
 
         directCodexAvailable = true
-        var fresh = providers
+        var fresh = cachedProviders
         replace(result.provider, in: &fresh)
         if let resetCredits = result.resetCredits { codexResetCredits = resetCredits }
         commit(fresh)
@@ -705,7 +723,7 @@ final class QuotaStore {
         }
 
         directClaudeAvailable = true
-        var fresh = providers
+        var fresh = cachedProviders
         replace(result, in: &fresh)
         commit(fresh)
         logger.info("Claude direct refresh succeeded")
@@ -719,14 +737,14 @@ final class QuotaStore {
         }
 
         directKimiAvailable = true
-        var fresh = providers
+        var fresh = cachedProviders
         replace(result, in: &fresh)
         commit(fresh)
         logger.info("Kimi direct refresh succeeded")
     }
 
     private func applyDeepSeek(_ provider: ProviderUsage) {
-        var fresh = providers
+        var fresh = cachedProviders
         replace(provider, in: &fresh)
         commit(fresh)
         deepSeekStatus = .live(fetchedAt: provider.fetchedAt ?? now())
@@ -811,11 +829,11 @@ final class QuotaStore {
     }
 
     private func removeDeepSeekProvider() {
-        providers.removeAll { $0.providerId.caseInsensitiveCompare("deepseek") == .orderedSame }
+        cachedProviders.removeAll { $0.providerId.caseInsensitiveCompare("deepseek") == .orderedSame }
     }
 
     private func applyGLM(_ provider: ProviderUsage) {
-        var fresh = providers
+        var fresh = cachedProviders
         replace(provider, in: &fresh)
         commit(fresh)
         glmStatus = .live(fetchedAt: provider.fetchedAt ?? now())
@@ -852,11 +870,11 @@ final class QuotaStore {
     }
 
     private func removeGLMProvider() {
-        providers.removeAll { $0.providerId.caseInsensitiveCompare("glm") == .orderedSame }
+        cachedProviders.removeAll { $0.providerId.caseInsensitiveCompare("glm") == .orderedSame }
     }
 
     private func applyMiniMax(_ provider: ProviderUsage) {
-        var fresh = providers
+        var fresh = cachedProviders
         replace(provider, in: &fresh)
         commit(fresh)
         miniMaxStatus = .live(fetchedAt: provider.fetchedAt ?? now())
@@ -893,7 +911,7 @@ final class QuotaStore {
     }
 
     private func removeMiniMaxProvider() {
-        providers.removeAll { $0.providerId.caseInsensitiveCompare("minimax") == .orderedSame }
+        cachedProviders.removeAll { $0.providerId.caseInsensitiveCompare("minimax") == .orderedSame }
     }
 
     private nonisolated static func mapMiniMaxError(_ error: MiniMaxClientError) -> MiniMaxErrorKind {
@@ -959,14 +977,14 @@ final class QuotaStore {
             if leftRank != rightRank { return leftRank < rightRank }
             return $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
         }
-        providers = sorted
-        lastUpdated = now()
-        errorMessageKey = nil
+        cachedProviders = sorted
+        cachedLastUpdated = now()
+        cachedErrorMessageKey = nil
     }
 
     private func setFailureMessageIfNeeded() {
         guard providers.isEmpty else { return }
-        errorMessageKey = "error.quotaUnavailable"
+        cachedErrorMessageKey = "error.quotaUnavailable"
     }
 
     private func providerSortRank(_ providerId: String) -> Int {

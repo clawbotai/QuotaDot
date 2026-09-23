@@ -44,6 +44,20 @@ if [[ -n "$RESOURCE_BUNDLE" ]]; then
   cp -R "$RESOURCE_BUNDLE" "$APP_RESOURCES/"
 fi
 
+ANTIGRAVITY_CLIENT_ID="${ANTIGRAVITY_CLIENT_ID:-}"
+ANTIGRAVITY_CLIENT_SECRET="${ANTIGRAVITY_CLIENT_SECRET:-}"
+
+for cfg in "$ROOT_DIR/Antigravity.xcconfig" "$ROOT_DIR/AntigravityConfig.xcconfig" "$ROOT_DIR/Config/Antigravity.xcconfig"; do
+  if [[ -f "$cfg" ]]; then
+    if [[ -z "$ANTIGRAVITY_CLIENT_ID" ]]; then
+      ANTIGRAVITY_CLIENT_ID="$(sed -n 's/^[[:space:]]*ANTIGRAVITY_CLIENT_ID[[:space:]]*=[[:space:]]*//p' "$cfg" | head -n 1 | tr -d '\r\n"' | sed "s/^'//" | sed "s/'$//")"
+    fi
+    if [[ -z "$ANTIGRAVITY_CLIENT_SECRET" ]]; then
+      ANTIGRAVITY_CLIENT_SECRET="$(sed -n 's/^[[:space:]]*ANTIGRAVITY_CLIENT_SECRET[[:space:]]*=[[:space:]]*//p' "$cfg" | head -n 1 | tr -d '\r\n"' | sed "s/^'//" | sed "s/'$//")"
+    fi
+  fi
+done
+
 cat > "$APP_BUNDLE/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -63,6 +77,8 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<PLIST
 <key>NSLocationWhenInUseUsageDescription</key><string>用于根据 Mac 当前所在位置显示实时天气背景。</string>
 <key>NSLocationUsageDescription</key><string>用于根据 Mac 当前所在位置显示实时天气背景。</string>
 <key>NSPrincipalClass</key><string>NSApplication</string>
+<key>AntigravityClientID</key><string>$ANTIGRAVITY_CLIENT_ID</string>
+<key>AntigravityClientSecret</key><string>$ANTIGRAVITY_CLIENT_SECRET</string>
 </dict></plist>
 PLIST
 

@@ -63,10 +63,19 @@ struct ProviderUsage: Decodable, Identifiable, Sendable {
         return progress(named: ["weekly", "week", "seven day", "spark"])
     }
     var credits: UsageLine? { progress(named: ["credits", "reset", "resets"]) }
+    var lowestRemainingPercent: Double? {
+        if providerId.lowercased() == "antigravity" {
+            return lines.filter { $0.type == "progress" }.compactMap(\.remainingPercent).min()
+        }
+        return [session?.remainingPercent, weekly?.remainingPercent].compactMap { $0 }.min()
+    }
+
     /// Summary percentage shown in the menu bar, floating header, and compact
     /// badges: the 5-hour window leads while it still has room; the weekly
     /// quota takes over once the session is exhausted or unavailable.
+    /// Antigravity instead reports the lowest remaining model-pool quota.
     var displayRemainingPercent: Double? {
+        if providerId.lowercased() == "antigravity" { return lowestRemainingPercent }
         if let session = session?.remainingPercent, session > 0 { return session }
         return weekly?.remainingPercent ?? session?.remainingPercent
     }

@@ -44,6 +44,14 @@ No unsigned build is published as an end-user release. Files containing `UNSIGNE
 
 In Settings, choose **Get API Key** to open DeepSeek's official API-key page, paste the newly created key into the secure field, and choose **Connect**. QuotaDot validates it against the official balance endpoint before storing it in macOS Keychain. A rejected key is never saved; disconnecting or receiving 401/403 removes the saved credential. See [INSTALL.md](docs/INSTALL.md#optional-deepseek-api-balance).
 
+### Optional Google Antigravity quota
+
+In Settings → **Google Antigravity**, choose **Sign in with Google** and complete authorization in your browser. No local Antigravity installation is required. QuotaDot stores the resulting credentials in macOS Keychain and refreshes them when needed. **Disconnect** removes the local credentials.
+
+The card shows the lowest reported remaining quota within each Gemini and Claude model group, alongside that model's reset time. These groups are not labeled as five-hour or weekly limits because this endpoint does not specify a duration. The menu bar uses the lower of the two groups. Missing quota is never substituted with 100%; unavailable data and authorization errors appear in Settings. A failed refresh removes the previous Antigravity card.
+
+This integration queries `v1internal:retrieveUserQuotaSummary` first so the four displayed buckets (Gemini / Claude × 5-hour / Weekly) match the Antigravity IDE's **/usage** surface exactly; if that RPC is not enabled for the project, the older `fetchAvailableModels` catalog is used as a fallback. It uses Google's internal Cloud Code endpoints, not a documented public quota API; independent Google authorization and actual quota availability depend on the account and the upstream service. No model inference requests are made.
+
 ## Privacy
 
 QuotaDot does not operate an account or quota relay server:
